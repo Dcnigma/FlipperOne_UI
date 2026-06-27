@@ -4572,11 +4572,34 @@ var server = http.createServer(function(req, res) {
     // on `enter()` and gates the rest of the app behind an
     // install modal when the binary is missing.
     if (req.url === '/api/radio/status' && req.method === 'GET') {
+        // Detection notes — why this is more than a one-liner:
+        //  • `which` was removed from debianutils in Debian Bookworm/
+        //    Trixie (and therefore current Kali), so the old check
+        //    threw "command not found" and falsely reported "not
+        //    installed" even when mpg123 was on disk.
+        //  • `sudo` resets PATH to secure_path; spawning a child with
+        //    a wiped env elsewhere can hide the binary from a PATH
+        //    lookup. Checking known paths first sidesteps both.
+        //  • `command -v` is a POSIX shell built-in (always present
+        //    when /bin/sh exists), so it's a safe fallback.
         var mpg123Installed = false;
-        try {
-            execSync('which mpg123', { timeout: 2000 });
-            mpg123Installed = true;
-        } catch (e) { /* not installed */ }
+        var knownPaths = ['/usr/bin/mpg123', '/usr/local/bin/mpg123', '/bin/mpg123'];
+        for (var i = 0; i < knownPaths.length; i++) {
+            try { fs.accessSync(knownPaths[i], fs.constants.X_OK); mpg123Installed = true; break; }
+            catch (e) { /* try next */ }
+        }
+        if (!mpg123Installed) {
+            try {
+                execSync('command -v mpg123', {
+                    stdio:   'ignore',
+                    shell:   '/bin/bash',
+                    timeout: 2000,
+                    // Hard-set PATH so a stripped sudo env can't hide it.
+                    env: { PATH: '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin' }
+                });
+                mpg123Installed = true;
+            } catch (e) { /* really not installed */ }
+        }
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ mpg123Installed: mpg123Installed, playing: radioPlaying }));
         return;
@@ -4848,26 +4871,53 @@ var server = http.createServer(function(req, res) {
     // that would otherwise hang the request; --no-install-recommends
     // keeps the install lean. Synchronous: the package is small
     // and the transaction fits inside the 60 s timeout.
+
     if (req.url === '/api/radio/install' && req.method === 'POST') {
-        var instOk = false;
-        var instOut = '';
-        try {
-            instOut = execSync(
-                'DEBIAN_FRONTEND=noninteractive apt-get install -y ' +
-                '--no-install-recommends mpg123 2>&1',
-                { encoding: 'utf8', timeout: 60000 });
-            instOk = true;
-        } catch (e) {
-            instOut = (e.stdout || '') + (e.stderr || '') + (e.message || '');
+            // Cheap re-check — if mpg123 is already on disk, just say yes.
+            // Mirrors the detection used by /api/radio/status above.
+            var already = false;
+            var knownPaths = ['/usr/bin/mpg123', '/usr/local/bin/mpg123', '/bin/mpg123'];
+            for (var i = 0; i < knownPaths.length; i++) {
+                try { fs.accessSync(knownPaths[i], fs.constants.X_OK); already = true; break; }
+                catch (e) {}
+            }
+            if (already) {
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: true, output: 'mpg123 already installed' }));
+                return;
+            }
+            // Actually install. apt indexes may be stale on a fresh Kali image —
+            // refresh first. fuser-loop waits politely for any other apt process
+            // (unattended-upgrades on first boot) to release the dpkg lock.
+            var installCmd =
+                'set -e; '
+              + 'while fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do sleep 1; done; '
+              + 'DEBIAN_FRONTEND=noninteractive apt-get update -y; '
+              + 'DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends mpg123';
+            var instOk  = false;
+            var instOut = '';
+            try {
+                instOut = execSync(installCmd, {
+                    encoding: 'utf8',
+                    timeout:  280000,        // under the client's 300 s
+                    maxBuffer: 4 * 1024 * 1024,
+                    shell:    '/bin/bash'
+                });
+                instOk = true;
+            } catch (e) {
+                instOut = (e.stdout || '') + (e.stderr || '') + (e.message || '');
+            }
+            // Re-probe — don't trust apt's exit code alone; the binary may
+            // already exist from a prior partial run that returned non-zero.
+            for (var j = 0; j < knownPaths.length; j++) {
+                try { fs.accessSync(knownPaths[j], fs.constants.X_OK); instOk = true; break; }
+                catch (e) {}
+            }
+            res.writeHead(instOk ? 200 : 500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: instOk, output: instOut.slice(-1000) }));
+            return;
         }
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({
-            success: instOk,
-            output:  instOut.slice(-1000)
-        }));
-        return;
-    }
-    if (req.url === '/api/hostname' && req.method === 'GET') {
+        if (req.url === '/api/hostname' && req.method === 'GET') {
         res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
         res.end(JSON.stringify({ hostname: os.hostname() }));
         return;
@@ -4914,10 +4964,11 @@ var server = http.createServer(function(req, res) {
         }).unref();
         return;
     }
-    serveStatic(req, res);
-});
 
-server.listen(PORT, BIND, function() {
+        serveStatic(req, res);
+    });
+    server.listen(PORT, BIND, function() {
+
     console.log('flipctl server listening on http://' + BIND + ':' + PORT);
     if (process.platform === 'linux') {
         try { startTouchpadStream(); }
