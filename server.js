@@ -1129,6 +1129,13 @@ function missingDeps() {
 // a non-root user too.
 var tvmbPresetChild = null;
 var tvmbPresetName  = null;   // 'Kodi TV' | 'Linux Desktop' | null
+var tvmbPresetChild = null;
+var tvmbPresetName  = null;
+// True only when WE re-configured xrandr for this preset. If the
+// user already had HDMI extended when startPreset ran, we leave
+// it as-is on stopPreset. Avoids flipping the display layout off
+// unexpectedly when quitting Kodi.
+var tvmbHdmiOwned   = false;
 // Preset name → shell command. Each command is invoked via
 // `sh -c` so we can pipe through `su` and pick up the user's
 // XDG/runtime dirs.
@@ -1195,33 +1202,64 @@ function detectXOutputs() {
     }
 
     // Bring up HDMI as an extended display to the right of DSI-1,
-    // keeping DSI-1 as primary. Idempotent — safe to call repeatedly.
-    // Returns the parsed HDMI geometry (W,H,X,Y) so the launcher can
-    // position Kodi exactly onto it.
+    // keeping DSI-1 as primary. Idempotent — IF HDMI already has an
+    // active geometry (the user (or a prior call) already extended
+    // it), we leave the layout alone and just return its current
+    // numbers. This preserves a user-chosen mode (e.g. 1920x1080 on
+    // a 1440p TV); a blind `--auto` would otherwise switch it back
+    // to the EDID-preferred native mode and reflow the layout.
     function enableHdmiExtended() {
-    var io = detectXOutputs();
-    if (!io.dsi)  return { ok: false, error: 'No DSI-1 output found' };
-    if (!io.hdmi) return { ok: false, error: 'No HDMI output found' };
-    if (!io.hdmiConnected) {
-        return { ok: false, error: 'HDMI cable not connected' };
+        var io = detectXOutputs();
+        if (!io.dsi)  return { ok: false, error: 'No DSI-1 output found' };
+        if (!io.hdmi) return { ok: false, error: 'No HDMI output found' };
+        if (!io.hdmiConnected) {
+            return { ok: false, error: 'HDMI cable not connected' };
+        }
+
+        // Probe whether HDMI is already showing geometry — i.e. the
+        // line "<HDMI-N> connected <W>x<H>+<X>+<Y>". If yes, that's
+        // an active extended layout the user explicitly arranged
+        // (xrandr only prints the geometry on active outputs); we
+        // honour it.
+        var preDump = xUserCmd('xrandr --query');
+        var preRe   = new RegExp('^' + io.hdmi +
+                                 '\\s+connected\\s+(?:primary\\s+)?(\\d+)x(\\d+)\\+(\\d+)\\+(\\d+)',
+                                 'm');
+        var preM    = preDump.match(preRe);
+        if (preM) {
+            console.log('[xrandr] HDMI already active at ' +
+                        preM[1] + 'x' + preM[2] + ' @ ' +
+                        preM[3] + ',' + preM[4] + ' — leaving as-is');
+            return {
+                ok:   true,
+                dsi:  io.dsi,
+                hdmi: io.hdmi,
+                geom: { w: +preM[1], h: +preM[2], x: +preM[3], y: +preM[4] }
+            };
+        }
+
+        // First-time setup. --auto picks the EDID-preferred mode. If
+        // your TV defaults to something weird (1440p, 720p) and you
+        // want to lock 1080p, set DSI_HDMI_FORCE_MODE=1920x1080 in
+        // the systemd unit's Environment= and we'll honour it here.
+        var forceMode = process.env.DSI_HDMI_FORCE_MODE || '';
+        var hdmiArg   = forceMode ? '--mode ' + forceMode : '--auto';
+        xUserCmd('xrandr --output ' + io.dsi  + ' --primary --auto ' +
+                 '--output ' + io.hdmi + ' ' + hdmiArg + ' --right-of ' + io.dsi);
+
+        var dump = xUserCmd('xrandr --query');
+        var re   = new RegExp('^' + io.hdmi +
+                              '\\s+connected\\s+(?:primary\\s+)?(\\d+)x(\\d+)\\+(\\d+)\\+(\\d+)',
+                              'm');
+        var m    = dump.match(re);
+        if (!m) return { ok: true, hdmi: io.hdmi, dsi: io.dsi, geom: null };
+        return {
+            ok:   true,
+            dsi:  io.dsi,
+            hdmi: io.hdmi,
+            geom: { w: +m[1], h: +m[2], x: +m[3], y: +m[4] }
+        };
     }
-    // Set DSI primary at native res; HDMI auto-mode, extended right.
-    // --auto picks the EDID-preferred mode; if your TV is fussy you
-    // can swap that for a hardcoded --mode 1920x1080.
-    xUserCmd('xrandr --output ' + io.dsi  + ' --primary --auto ' +
-             '--output ' + io.hdmi + ' --auto --right-of ' + io.dsi);
-    // Re-read the geometry so the caller has authoritative numbers.
-    var dump = xUserCmd('xrandr --query');
-    var re   = new RegExp('^' + io.hdmi + '\\s+connected\\s+(?:primary\\s+)?(\\d+)x(\\d+)\\+(\\d+)\\+(\\d+)', 'm');
-    var m    = dump.match(re);
-    if (!m) return { ok: true, hdmi: io.hdmi, dsi: io.dsi, geom: null };
-    return {
-        ok:   true,
-        dsi:  io.dsi,
-        hdmi: io.hdmi,
-        geom: { w: +m[1], h: +m[2], x: +m[3], y: +m[4] }
-    };
-}
 
 // Drop HDMI back off, leaving only DSI-1 active. Called from
 // stopPreset() so closing Kodi returns you to your original
@@ -1258,6 +1296,12 @@ var TVMB_PRESET_CMD = {
     'On-screen Keyboard': asUserX('onboard &'),
     'Xfce Desktop':       asUserX('startxfce4')   // harmless if already running
 };
+// SIGTERM the preset's tracked child + reap any stray Kodi.
+// Only flip HDMI off if WE enabled it on this run — otherwise
+// the user came in with a pre-existing extended layout (their
+// own xrandr setup) and we'd be ripping the rug out from under
+// it. tvmbHdmiOwned is set true when enableHdmiExtended() actually
+// reconfigures, false when it left an existing layout alone.
 function stopPreset() {
     if (tvmbPresetChild) {
         try { tvmbPresetChild.kill('SIGTERM'); } catch (e) {}
@@ -1265,10 +1309,10 @@ function stopPreset() {
         tvmbPresetName  = null;
     }
     try { execSync('killall kodi.bin kodi', { timeout: 2000 }); } catch (e) {}
-    // Drop HDMI back off so DSI-1 is alone again, matching the
-    // "Only DSI-1" state you picked at boot. Soft-fails if HDMI
-    // wasn't enabled in the first place.
-    try { disableHdmiExtended(); } catch (e) {}
+    if (tvmbHdmiOwned) {
+        try { disableHdmiExtended(); } catch (e) {}
+        tvmbHdmiOwned = false;
+    }
 }
 
 
@@ -1276,14 +1320,25 @@ function startPreset(presetName) {
     // Auto-prep HDMI for the Kodi presets only. Other presets
     // (onboard, xfce) run on DSI-1 and don't need HDMI on.
     if (presetName === 'Kodi TV' || presetName === 'Kodi (standalone)') {
-        var hdmi = enableHdmiExtended();
-        if (!hdmi.ok) {
-            return { success: false, error: 'HDMI setup: ' + hdmi.error };
+            // Snapshot whether HDMI was ALREADY extended before we
+            // touched anything. If it was, enableHdmiExtended() will
+            // leave it alone (its idempotent path); we then leave
+            // tvmbHdmiOwned false so stopPreset() also won't touch it.
+            var preProbe = detectXOutputs();
+            var preDump  = xUserCmd('xrandr --query');
+            var alreadyExtended = preProbe.hdmi
+                && new RegExp('^' + preProbe.hdmi + '\\s+connected\\s+(?:primary\\s+)?\\d+x\\d+\\+\\d+\\+\\d+', 'm').test(preDump);
+
+            var hdmi = enableHdmiExtended();
+            if (!hdmi.ok) {
+                return { success: false, error: 'HDMI setup: ' + hdmi.error };
+            }
+            tvmbHdmiOwned = !alreadyExtended;     // we own it only if WE turned it on
+            console.log('[tvmb] HDMI ready at ' + hdmi.hdmi +
+                        (hdmi.geom ? ' ' + hdmi.geom.w + 'x' + hdmi.geom.h +
+                                     ' @ ' + hdmi.geom.x + ',' + hdmi.geom.y : '') +
+                        (tvmbHdmiOwned ? ' (auto)' : ' (preserved user layout)'));
         }
-        console.log('[tvmb] HDMI ready at ' + hdmi.hdmi +
-                    (hdmi.geom ? ' ' + hdmi.geom.w + 'x' + hdmi.geom.h +
-                                 ' @ ' + hdmi.geom.x + ',' + hdmi.geom.y : ''));
-    }
 
     var cmd = TVMB_PRESET_CMD[presetName];
     if (!cmd) return { success: false, error: 'Unknown / unsupported preset: ' + presetName };
@@ -4625,98 +4680,7 @@ var server = http.createServer(function(req, res) {
         return;
     }
 
-    // ── Kodi JSON-RPC config ────────────────────────────────────────
-    var KODI_HOST = process.env.KODI_HOST || '127.0.0.1';
-    var KODI_PORT = process.env.KODI_PORT || '8080';
-    var KODI_USER = process.env.KODI_USER || 'kodi';
-    var KODI_PASS = process.env.KODI_PASS || 'kodi';
-    // Allowlist — keep the proxy from being a generic Kodi RCE if
-    // anything else lands on the LAN. Add methods as the UI grows.
-    var KODI_ALLOWED = {
-        'JSONRPC.Ping':              true,
-        'Input.Up':                  true,
-        'Input.Down':                true,
-        'Input.Left':                true,
-        'Input.Right':               true,
-        'Input.Select':              true,
-        'Input.Back':                true,
-        'Input.Home':                true,
-        'Input.ContextMenu':         true,
-        'Input.Info':                true,
-        'Input.ShowOSD':             true,
-        'Input.ExecuteAction':       true,   // for play/pause/stop/seek
-        'Player.GetActivePlayers':   true,
-        'Player.GetItem':            true,
-        'Player.GetProperties':      true,
-        'Player.PlayPause':          true,
-        'Player.Stop':               true,
-        'Player.Seek':               true,
-        'Player.SetSpeed':           true,
-        'Application.GetProperties': true,
-        'Application.SetVolume':     true,
-        'Application.SetMute':       true,
-        'Application.Quit':          true,
-        'System.Shutdown':           true,
-        'System.Suspend':            true,
-        'GUI.ActivateWindow':        true,
-        'GUI.ShowNotification':      true,
-        'VideoLibrary.GetMovies':    true,
-        'Files.GetSources':          true
-    };
 
-    // ── /api/kodi/rpc ───────────────────────────────────────────────
-    // Body: { method, params? }. Proxies one JSON-RPC call to Kodi's
-    // :8080 HTTP server and returns the result verbatim. Auth lives
-    // in the server's env, not the browser — the UI just picks from
-    // the KODI_ALLOWED whitelist.
-    if (req.url === '/api/kodi/rpc' && req.method === 'POST') {
-        readJsonBody(req, function(err, data) {
-            var method = data && data.method;
-            if (typeof method !== 'string' || !KODI_ALLOWED[method]) {
-                res.writeHead(400, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ error: 'Method not allowed: ' + method }));
-                return;
-            }
-            var body = JSON.stringify({
-                jsonrpc: '2.0',
-                id:      1,
-                method:  method,
-                params:  data.params || {}
-            });
-            var opts = {
-                hostname: KODI_HOST,
-                port:     KODI_PORT,
-                path:     '/jsonrpc',
-                method:   'POST',
-                headers: {
-                    'Content-Type':   'application/json',
-                    'Content-Length': Buffer.byteLength(body),
-                    'Authorization':  'Basic ' +
-                        Buffer.from(KODI_USER + ':' + KODI_PASS).toString('base64')
-                },
-                timeout: 5000
-            };
-            var kreq = http.request(opts, function(kres) {
-                var chunks = '';
-                kres.on('data', function(c) { chunks += c; });
-                kres.on('end', function() {
-                    res.writeHead(kres.statusCode, { 'Content-Type': 'application/json' });
-                    res.end(chunks);
-                });
-            });
-            kreq.on('error', function(e) {
-                // Most common case: Kodi isn't running, or the web
-                // server is off. Surface a clear message so the UI
-                // can prompt "Start Kodi first".
-                res.writeHead(503, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ error: 'Kodi unreachable: ' + e.message }));
-            });
-            kreq.on('timeout', function() { kreq.destroy(); });
-            kreq.write(body);
-            kreq.end();
-        });
-        return;
-    }
 
     // ── /api/tvmb/status ─────────────────────────────────────────
     // { running, preset } — tells the client which preset (if any)
