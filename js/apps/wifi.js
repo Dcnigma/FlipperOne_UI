@@ -88,7 +88,7 @@ var WifiScene = (function() {
     var ROW_H             = 13;       // compact row, no icons
     var SELECTOR_H        = ROW_H + 2;  // 1 px above + 1 px below
     var SELECTOR_Y_OFFSET = -1;
-    var DIVIDER_COL       = '#824704';
+    var DIVIDER_COL       = '#ccc';
     // Container starts 16 px below the status bar (matches
     // SubMenuScene). Inner padding for the row text — 5 px so the
     // label sits comfortably inside the selector frame's left
@@ -186,8 +186,8 @@ var WifiScene = (function() {
             cornerRadius: 3,
             showChevron: true,
             chevronWidth: 7,
-            chevronColor: '#faa134666',
-            chevronGlyphColor: '#ffa550'
+            chevronColor: '#666666',
+            chevronGlyphColor: '#ffab3d'
         });
     }
 
@@ -471,7 +471,7 @@ var WifiScene = (function() {
         var SCREEN_PAD       = 4;
         var TAB_H            = 16;
         var FRAME_X          = SCREEN_PAD;
-        var FRAME_W          = 1024 - SCREEN_PAD * 2;
+        var FRAME_W          = 256 - SCREEN_PAD * 2;
         // Inner padding inside the frame body. Bottom is 1 px
         // larger than top so the frame's lower edge sits one row
         // below where straight 3+3 padding would land — gives the
@@ -489,7 +489,7 @@ var WifiScene = (function() {
         // bump above so the maximum-height modal still hits a
         // clean limit).
         var MAX_BOTTOM_Y     = 128;
-        var CANVAS_H         = 600;
+        var CANVAS_H         = 144;
         // Spinner / placeholder min content height — always
         // reserve room for a couple of rows so the spinner has
         // breathing space even before the first scan returns.
@@ -706,7 +706,7 @@ var WifiScene = (function() {
                     width: FRAME_W, height: L.frameH,
                     anchorH: 'left', anchorV: 'top',
                     strokeColor: '#000', showStroke: true,
-                    fillColor: '#ffa550', showFill: true,
+                    fillColor: '#ffab3d', showFill: true,
                     // 3 px corner radius across both sides of the
                     // body — keeps left (BL) and right (TR/BR)
                     // visually consistent, and matches the
@@ -739,7 +739,7 @@ var WifiScene = (function() {
                     HaxrcorpFont16.draw(ctx, placeholder,
                         FRAME_X + Math.floor((FRAME_W - phW) / 2),
                         L.innerTop + Math.floor((L.innerH - 11) / 2),
-                        '#eda74c');
+                        '#c48021');
                     return;
                 }
 
@@ -769,8 +769,8 @@ var WifiScene = (function() {
                     var net = nets[ni];
                     if (ni === self._modalSelected) selectedY = rowY;
                     var pressed = (ni === self._modalPressed);
-                    var fg = pressed ? '#ffa550' : '#000';
-                    var fgDim = pressed ? '#ffa550' : '#eda74c';
+                    var fg = pressed ? '#ffab3d' : '#000';
+                    var fgDim = pressed ? '#ffab3d' : '#c48021';
 
                     if (pressed) {
                         // Press flash: filled black with white text.
@@ -871,7 +871,7 @@ var WifiScene = (function() {
                     HaxrcorpFont16.draw(ctx, toastTxt,
                         pillX + 7,
                         pillY + Math.floor((pillH - 11) / 2),
-                        '#ffa550');
+                        '#ffab3d');
                 } else if (self._modalToast) {
                     // Lifetime expired — clear so the next render
                     // doesn't keep painting it.
@@ -1041,7 +1041,7 @@ var WifiScene = (function() {
                         : errorMsg;
                     var ew = HaxrcorpFont16.textWidth(emsg);
                     HaxrcorpFont16.draw(ctx, emsg,
-                        Math.floor((canvas.w - ew) / 2), 60, '#eda74c');
+                        Math.floor((canvas.w - ew) / 2), 60, '#c48021');
                 }
             }
         };
@@ -1097,9 +1097,9 @@ var WifiScene = (function() {
         var SCROLLBAR_GUTTER = 6;
         var ROW_PITCH        = ROW_H + 1;
         var MAX_BOTTOM_Y     = 128;
-        var CANVAS_H         = 600;
+        var CANVAS_H         = 144;
         var TAB_TEXT         = 'Saved networks';
-        var FRAME_W_MAX      = 1024 - SCREEN_PAD * 2;
+        var FRAME_W_MAX      = 256 - SCREEN_PAD * 2;
         var FRAME_W_MIN      = HaxrcorpFont16.textWidth(TAB_TEXT) + 6 + 20;
 
         // Fetch state.
@@ -1133,12 +1133,12 @@ var WifiScene = (function() {
             x: 0, y: 0, width: 1, height: ROW_H + 2,
             anchorH: 'left', anchorV: 'top',
             strokeColor: '#000', showStroke: true,
-            fillColor: '#ffa550', showFill: false,
+            fillColor: '#ffab3d', showFill: false,
             cornerRadius: 3,
             showChevron: true,
             chevronWidth: 7,
-            chevronColor: '#faa134666',
-            chevronGlyphColor: '#ffa550'
+            chevronColor: '#666666',
+            chevronGlyphColor: '#ffab3d'
         });
 
         var tab = new UI.TabHeader(TAB_TEXT);
@@ -1193,7 +1193,7 @@ var WifiScene = (function() {
             var contentDrivenW = maxSsidW + (willScroll ? 22 : 16);
             var frameW = Math.max(FRAME_W_MIN, contentDrivenW);
             if (frameW > FRAME_W_MAX) frameW = FRAME_W_MAX;
-            var frameX = Math.floor((1024 - frameW) / 2);
+            var frameX = Math.floor((256 - frameW) / 2);
             var scrollbarX = frameX + frameW - 5;
 
             // ── Final vertical placement ──────────────────────
@@ -1304,7 +1304,7 @@ var WifiScene = (function() {
                     width: L.frameW, height: L.frameH,
                     anchorH: 'left', anchorV: 'top',
                     strokeColor: '#000', showStroke: true,
-                    fillColor: '#ffa550', showFill: true,
+                    fillColor: '#ffab3d', showFill: true,
                     // 3 px corner radius — matches the chevron-bar
                     // selector that sits along the right edge.
                     // The TR / BR corners now share the same
@@ -1323,10 +1323,10 @@ var WifiScene = (function() {
 
                 if (!loaded) {
                     HaxrcorpFont16.draw(ctx, 'Loading…',
-                        INNER_X + 5, L.innerTop + 4, '#eda74c');
+                        INNER_X + 5, L.innerTop + 4, '#c48021');
                 } else if (networks.length === 0) {
                     HaxrcorpFont16.draw(ctx, 'No saved networks',
-                        INNER_X + 5, L.innerTop + 4, '#eda74c');
+                        INNER_X + 5, L.innerTop + 4, '#c48021');
                 } else {
                     var selectedY = -1;
                     for (var i = 0; i < networks.length; i++) {
@@ -1337,8 +1337,8 @@ var WifiScene = (function() {
                         var isSelected = (i === self._savedSelected);
                         var isPressed  = (i === self._savedPressed);
                         if (isSelected) selectedY = rowY;
-                        var fg    = isPressed ? '#ffa550' : '#000';
-                        var fgDim = isPressed ? '#ffa550' : '#eda74c';
+                        var fg    = isPressed ? '#ffab3d' : '#000';
+                        var fgDim = isPressed ? '#ffab3d' : '#c48021';
                         if (isPressed) {
                             canvas.drawRoundRect(INNER_X, rowY - 1,
                                 dynInnerW, ROW_H + 2, 2, '#000');
@@ -1417,7 +1417,7 @@ var WifiScene = (function() {
         var SCREEN_PAD       = 4;
         var TAB_H            = 16;
         var FRAME_X          = SCREEN_PAD;
-        var FRAME_W          = 1024 - SCREEN_PAD * 2;
+        var FRAME_W          = 256 - SCREEN_PAD * 2;
         var FRAME_PAD_TOP    = 3;
         var FRAME_PAD_BOTTOM = 4;
         var SCROLLBAR_GUTTER = 6;
@@ -1426,7 +1426,7 @@ var WifiScene = (function() {
         var DIVIDER_H        = 5;        // 2 px above + 1 px line + 2 px below
         var KV_H             = 12;       // info rows are slightly tighter
         var MAX_BOTTOM_Y     = 128;
-        var CANVAS_H         = 600;
+        var CANVAS_H         = 144;
         var INNER_LABEL_GAP  = 4;        // px between "Label:" and value
 
         // Cached connection details from /api/wifi/connection.
@@ -2021,7 +2021,7 @@ var WifiScene = (function() {
                     width: FRAME_W, height: L.frameH,
                     anchorH: 'left', anchorV: 'top',
                     strokeColor: '#000', showStroke: true,
-                    fillColor: '#ffa550', showFill: true,
+                    fillColor: '#ffab3d', showFill: true,
                     // 3 px corner radius across both sides of the
                     // body — keeps left (BL) and right (TR/BR)
                     // visually consistent, and matches the
@@ -2062,8 +2062,8 @@ var WifiScene = (function() {
                     var isSelected = (i === self._cdSelected);
                     var isPressed  = (i === self._cdPressed);
                     if (isSelected) selectedY = rowAbsY;
-                    var fg    = isPressed ? '#ffa550' : '#000';
-                    var fgDim = isPressed ? '#ffa550' : '#eda74c';
+                    var fg    = isPressed ? '#ffab3d' : '#000';
+                    var fgDim = isPressed ? '#ffab3d' : '#c48021';
 
                     if (isPressed && row.selectable) {
                         canvas.drawRoundRect(INNER_X, rowAbsY - 1,
@@ -2077,20 +2077,20 @@ var WifiScene = (function() {
                         // dropped to 1 px (was 2) per the latest
                         // tightening pass.
                         canvas.drawHLine(INNER_X + 3, rowAbsY + 1,
-                            dynInnerW - 6, '#824704');
+                            dynInnerW - 6, '#ccc');
                     } else if (row.kind === 'divider') {
                         // Same 3-px-each-side inset as the section
                         // divider above; line sits 1 px below the
                         // row top, leaving the bottom padding alone.
                         canvas.drawHLine(INNER_X + 3, rowAbsY + 1,
-                            dynInnerW - 6, '#824704');
+                            dynInnerW - 6, '#ccc');
                     } else if (row.kind === 'action') {
                         HaxrcorpFont16.draw(ctx, row.text,
                             INNER_X + 5, rowAbsY + 1, fg);
                         if (row.isToggle && row.getStatus) {
                             self._drawToggleStatus(canvas, row, isSelected,
                                 INNER_X, dynInnerW, rowAbsY + 1,
-                                isSelected ? '#000' : '#eda74c');
+                                isSelected ? '#000' : '#c48021');
                         } else if (row.chevron) {
                             var ch  = '>';
                             var cw  = HaxrcorpFont16.textWidth(ch);
@@ -2126,14 +2126,14 @@ var WifiScene = (function() {
                             && window.input.isHeld('ok'));
                         var pwText, pwColor, pwTextDy = 0;
                         if (loading) {
-                            pwText = '…';            pwColor = '#eda74c';
+                            pwText = '…';            pwColor = '#c48021';
                         } else if (!details || details.connected === false) {
-                            pwText = '—';            pwColor = '#eda74c';
+                            pwText = '—';            pwColor = '#c48021';
                         } else if (!details.password) {
-                            pwText = 'open';         pwColor = '#eda74c';
+                            pwText = 'open';         pwColor = '#c48021';
                         } else if (revealing) {
                             pwText = details.password;
-                            pwColor = isPressed ? '#ffa550' : '#000';
+                            pwColor = isPressed ? '#ffab3d' : '#000';
                         } else {
                             // Asterisks (font has them; U+2022
                             // bullet doesn't exist in the bitmap).
@@ -2143,7 +2143,7 @@ var WifiScene = (function() {
                             var maskN = details.password.length;
                             pwText = '';
                             for (var pmk = 0; pmk < maskN; pmk++) pwText += '*';
-                            pwColor = isPressed ? '#ffa550' : '#000';
+                            pwColor = isPressed ? '#ffab3d' : '#000';
                             // The `*` glyph sits high in
                             // HaxrcorpFont16 (cap near the ascender)
                             // — push it 2 px down so the dots read
@@ -2171,9 +2171,9 @@ var WifiScene = (function() {
                             pwTextX, rowAbsY + 1 + pwTextDy, pwColor);
                     } else if (row.kind === 'unavailable') {
                         HaxrcorpFont16.draw(ctx, row.text,
-                            INNER_X + 5, rowAbsY + 1, '#eda74c');
+                            INNER_X + 5, rowAbsY + 1, '#c48021');
                     } else if (row.kind === 'kv') {
-                        var lblColor = isPressed ? '#ffa550' : '#6D6D6D';
+                        var lblColor = isPressed ? '#ffab3d' : '#6D6D6D';
                         HaxrcorpFont16.draw(ctx, row.label,
                             INNER_X + 5, rowAbsY + 1, lblColor);
                         var lblW = HaxrcorpFont16.textWidth(row.label);
@@ -2183,11 +2183,11 @@ var WifiScene = (function() {
                     } else if (row.kind === 'sub') {
                         HaxrcorpFont16.draw(ctx, row.text,
                             INNER_X + 5, rowAbsY + 1,
-                            isPressed ? '#ffa550' : '#6D6D6D');
+                            isPressed ? '#ffab3d' : '#6D6D6D');
                     } else if (row.kind === 'value') {
                         HaxrcorpFont16.draw(ctx, row.text,
                             INNER_X + 14, rowAbsY + 1,
-                            isPressed ? '#ffa550' : '#000');
+                            isPressed ? '#ffab3d' : '#000');
                     } else if (row.kind === 'pad') {
                         // Intentional no-op: just contributes 1 px
                         // of vertical space between Auto join and
@@ -2206,8 +2206,8 @@ var WifiScene = (function() {
                         for (var li = 0; li < row.lines.length; li++) {
                             var ln = row.lines[li];
                             var lh = lineHeightOf(ln);
-                            var lnFg     = isPressed ? '#ffa550' : '#000';
-                            var lnLbl    = isPressed ? '#ffa550' : '#6D6D6D';
+                            var lnFg     = isPressed ? '#ffab3d' : '#000';
+                            var lnLbl    = isPressed ? '#ffab3d' : '#6D6D6D';
                             if (ln.kind === 'divider') {
                                 // 3-px inset on each side, top
                                 // padding 1 px — matches the
@@ -2216,10 +2216,10 @@ var WifiScene = (function() {
                                 // above.
                                 canvas.drawHLine(BLOCK_INNER_X + 3,
                                     ly + 1,
-                                    BLOCK_INNER_W - 6, '#E5E5E5');
+                                    BLOCK_INNER_W - 6, '#613708');
                             } else if (ln.kind === 'unavailable') {
                                 HaxrcorpFont16.draw(ctx, ln.text,
-                                    BLOCK_INNER_X + 1, ly + 1, '#eda74c');
+                                    BLOCK_INNER_X + 1, ly + 1, '#c48021');
                             } else if (ln.kind === 'kv') {
                                 HaxrcorpFont16.draw(ctx, ln.label,
                                     BLOCK_INNER_X + 1, ly + 1, lnLbl);
@@ -2230,11 +2230,11 @@ var WifiScene = (function() {
                             } else if (ln.kind === 'sub') {
                                 HaxrcorpFont16.draw(ctx, ln.text,
                                     BLOCK_INNER_X + 1, ly + 1,
-                                    isPressed ? '#ffa550' : '#6D6D6D');
+                                    isPressed ? '#ffab3d' : '#6D6D6D');
                             } else if (ln.kind === 'value') {
                                 HaxrcorpFont16.draw(ctx, ln.text,
                                     BLOCK_INNER_X + 10, ly + 1,
-                                    isPressed ? '#ffa550' : '#000');
+                                    isPressed ? '#ffab3d' : '#000');
                             }
                             ly += lh;
                         }
@@ -2276,11 +2276,11 @@ var WifiScene = (function() {
                             anchorH: 'left', anchorV: 'top',
                             cornerRadius: 3,
                             strokeColor: '#000', showStroke: true,
-                            fillColor: '#ffa550', showFill: false,
+                            fillColor: '#ffab3d', showFill: false,
                             showChevron: true,
                             chevronWidth: 7,
-                            chevronColor: '#faa134666',
-                            chevronGlyphColor: '#ffa550'
+                            chevronColor: '#666666',
+                            chevronGlyphColor: '#ffab3d'
                         });
                         csf.render(canvas);
                     } else {
@@ -2390,7 +2390,7 @@ var WifiScene = (function() {
         // Refresh the items list so the connected-network row
         // appears / disappears in step with the live wifi state.
         this._buildItems();
-        canvas.clear('#ffa550');
+        canvas.clear('#ffab3d');
         UI.drawStatusBar(canvas, '');
 
         // Breadcrumb trail — derived from SceneManager.breadcrumb(),
@@ -2398,14 +2398,14 @@ var WifiScene = (function() {
         // scene's `breadcrumbTitle`. Falls back to this scene's
         // own `breadcrumbTitle` if no scene manager is wired (the
         // standalone-render path used by some tests). Same accent
-        // colour SubMenuScene uses (#824704).
+        // colour SubMenuScene uses (#ccc).
         var titles = (this.sceneManager && typeof this.sceneManager.breadcrumb === 'function')
             ? this.sceneManager.breadcrumb()
             : (this.breadcrumbTitle ? [this.breadcrumbTitle] : []);
         var trail = titles.length ? '> ' + titles.join(' > ') : '';
         if (trail) {
             HaxrcorpFont16.draw(canvas.ctx, trail,
-                BREADCRUMB_X, BREADCRUMB_Y, '#824704');
+                BREADCRUMB_X, BREADCRUMB_Y, '#ccc');
         }
 
         // Render each item. Dividers are now explicit entries in
@@ -2444,7 +2444,7 @@ var WifiScene = (function() {
                 var connPrefix = 'Connected to: ';
                 var connPrefixW = HaxrcorpFont16.textWidth(connPrefix);
                 HaxrcorpFont16.draw(canvas.ctx, connPrefix,
-                    SELECTOR_X + TEXT_LEFT_PAD, y + TEXT_DY, '#eda74c');
+                    SELECTOR_X + TEXT_LEFT_PAD, y + TEXT_DY, '#c48021');
                 HaxrcorpFont16.draw(canvas.ctx, item.text,
                     SELECTOR_X + TEXT_LEFT_PAD + connPrefixW,
                     y + TEXT_DY, labelColor);
@@ -2454,7 +2454,7 @@ var WifiScene = (function() {
             }
 
             if (item.isToggle && item.getStatus) {
-                var statusColor = isSelected ? '#000' : '#eda74c';
+                var statusColor = isSelected ? '#000' : '#c48021';
                 this._drawToggleStatus(canvas, item, isSelected,
                     SELECTOR_X, SELECTOR_W, y + TEXT_DY, statusColor);
             }

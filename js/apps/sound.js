@@ -18,7 +18,7 @@ var SoundMenuScene = (function() {
     SoundMenuScene.prototype.exit = function() {};
 
     SoundMenuScene.prototype.handleInput = function(action) {
-        var visible = UI.visibleCount(600);
+        var visible = UI.visibleCount(144);
         if (action === 'down') {
             if (this.selectedIndex < this.items.length - 1) {
                 this.selectedIndex++;
@@ -116,7 +116,7 @@ var PlaySoundScene = (function() {
         if (action === 'back' || action === 'esc') return 'pop';
         if (loading) return;
 
-        var visible = UI.visibleCount(600);
+        var visible = UI.visibleCount(144);
 
         if (action === 'down') {
             if (selectedIndex < files.length - 1) {
@@ -147,17 +147,17 @@ var PlaySoundScene = (function() {
         UI.drawStatusBar(canvas, 'Play sound');
 
         if (loading) {
-            canvas.drawText('Loading...', 4, UI.STATUS_BAR_H + 4, '#f7c52f');
+            canvas.drawText('Loading...', 4, UI.STATUS_BAR_H + 4, '#888');
             return;
         }
         if (error) {
-            canvas.drawText('Error loading files', 4, UI.STATUS_BAR_H + 4, '#f7c52f');
-            canvas.drawText('[Back]', 4, canvas.h - 9, '#f7c52f');
+            canvas.drawText('Error loading files', 4, UI.STATUS_BAR_H + 4, '#888');
+            canvas.drawText('[Back]', 4, canvas.h - 9, '#888');
             return;
         }
         if (files.length === 0) {
-            canvas.drawText('No audio files', 4, UI.STATUS_BAR_H + 4, '#f7c52f');
-            canvas.drawText('[Back]', 4, canvas.h - 9, '#f7c52f');
+            canvas.drawText('No audio files', 4, UI.STATUS_BAR_H + 4, '#888');
+            canvas.drawText('[Back]', 4, canvas.h - 9, '#888');
             return;
         }
 
@@ -230,7 +230,7 @@ var AudioDevicesScene = (function() {
         if (action === 'back' || action === 'esc') return 'pop';
         if (loading) return;
 
-        var visible = UI.visibleCount(600);
+        var visible = UI.visibleCount(144);
 
         if (action === 'down') {
             if (selectedIndex < devices.length - 1) {
@@ -257,17 +257,17 @@ var AudioDevicesScene = (function() {
         UI.drawStatusBar(canvas, 'Audio devices');
 
         if (loading) {
-            canvas.drawText('Loading...', 4, UI.STATUS_BAR_H + 4, '#f7c52f');
+            canvas.drawText('Loading...', 4, UI.STATUS_BAR_H + 4, '#888');
             return;
         }
         if (error) {
-            canvas.drawText('Error reading devices', 4, UI.STATUS_BAR_H + 4, '#f7c52f');
-            canvas.drawText('[Back]', 4, canvas.h - 9, '#f7c52f');
+            canvas.drawText('Error reading devices', 4, UI.STATUS_BAR_H + 4, '#888');
+            canvas.drawText('[Back]', 4, canvas.h - 9, '#888');
             return;
         }
         if (devices.length === 0) {
-            canvas.drawText('No audio devices', 4, UI.STATUS_BAR_H + 4, '#f7c52f');
-            canvas.drawText('[Back]', 4, canvas.h - 9, '#f7c52f');
+            canvas.drawText('No audio devices', 4, UI.STATUS_BAR_H + 4, '#888');
+            canvas.drawText('[Back]', 4, canvas.h - 9, '#888');
             return;
         }
 
@@ -364,12 +364,12 @@ var VolumeScene = (function() {
         var y = UI.STATUS_BAR_H + 4;
 
         if (loading) {
-            canvas.drawText('Loading...', 4, y, '#f7c52f');
+            canvas.drawText('Loading...', 4, y, '#888');
             return;
         }
         if (error) {
-            canvas.drawText('Error reading volume', 4, y, '#f7c52f');
-            canvas.drawText('[Back]', 4, canvas.h - 9, '#f7c52f');
+            canvas.drawText('Error reading volume', 4, y, '#888');
+            canvas.drawText('[Back]', 4, canvas.h - 9, '#888');
             return;
         }
 
@@ -381,21 +381,21 @@ var VolumeScene = (function() {
             var c = controls[i];
             var cy = y + i * blockH;
             var selected = (i === selectedControl);
-            var textColor = selected ? '#ffa550' : '#f7c52f';
+            var textColor = selected ? '#ffab3d' : '#888';
             var prefix = selected ? '>' : ' ';
 
             canvas.drawText(prefix + c.label + ': ' + c.volume + '%', 4, cy, textColor);
 
             var barY = cy + 10;
-            canvas.drawFrame(4, barY, barW + 2, barH + 2, selected ? '#ffa550' : '#f7c52f');
+            canvas.drawFrame(4, barY, barW + 2, barH + 2, selected ? '#ffab3d' : '#888');
             var fillW = Math.round(barW * (c.volume / 100));
             if (fillW > 0) {
-                canvas.drawRect(5, barY + 1, fillW, barH, selected ? '#ffa550' : '#f7c52f');
+                canvas.drawRect(5, barY + 1, fillW, barH, selected ? '#ffab3d' : '#888');
             }
         }
 
-        canvas.drawText('</>  Adjust    ^/v  Select', 4, canvas.h - 20, '#f7c52f');
-        canvas.drawText('[Back]', 4, canvas.h - 9, '#f7c52f');
+        canvas.drawText('</>  Adjust    ^/v  Select', 4, canvas.h - 20, '#888');
+        canvas.drawText('[Back]', 4, canvas.h - 9, '#888');
     };
 
     return VolumeScene;
@@ -466,57 +466,57 @@ var RestartDriverScene = (function() {
         var lineH = 9;
 
         if (state === 'confirm') {
-            canvas.drawText('Restart NAU8822 audio', 4, y, '#ffa550');
-            canvas.drawText('driver? This will', 4, y + lineH, '#ffa550');
-            canvas.drawText('unbind and rebind the', 4, y + lineH * 2, '#ffa550');
-            canvas.drawText('I2C codec driver.', 4, y + lineH * 3, '#ffa550');
+            canvas.drawText('Restart NAU8822 audio', 4, y, '#ffab3d');
+            canvas.drawText('driver? This will', 4, y + lineH, '#ffab3d');
+            canvas.drawText('unbind and rebind the', 4, y + lineH * 2, '#ffab3d');
+            canvas.drawText('I2C codec driver.', 4, y + lineH * 3, '#ffab3d');
 
             var btnY = canvas.h - 11;
             var restartLabel = '[Restart]';
             var cancelLabel = '[Cancel]';
             if (buttonIndex === 0) {
-                canvas.drawText(restartLabel, 4, btnY, '#ffa550');
-                canvas.drawText(cancelLabel, 4 + restartLabel.length * 6 + 12, btnY, '#f7c52f');
+                canvas.drawText(restartLabel, 4, btnY, '#ffab3d');
+                canvas.drawText(cancelLabel, 4 + restartLabel.length * 6 + 12, btnY, '#888');
             } else {
-                canvas.drawText(restartLabel, 4, btnY, '#f7c52f');
-                canvas.drawText(cancelLabel, 4 + restartLabel.length * 6 + 12, btnY, '#ffa550');
+                canvas.drawText(restartLabel, 4, btnY, '#888');
+                canvas.drawText(cancelLabel, 4 + restartLabel.length * 6 + 12, btnY, '#ffab3d');
             }
             return;
         }
 
         if (state === 'running') {
-            canvas.drawText('Restarting driver...', 4, y, '#ffa550');
-            canvas.drawText('Please wait', 4, y + lineH, '#f7c52f');
+            canvas.drawText('Restarting driver...', 4, y, '#ffab3d');
+            canvas.drawText('Please wait', 4, y + lineH, '#888');
             return;
         }
 
         if (state === 'success') {
-            canvas.drawText('Driver restarted', 4, y, '#ffa550');
-            canvas.drawText('NAU8822 recovered', 4, y + lineH, '#ffa550');
+            canvas.drawText('Driver restarted', 4, y, '#ffab3d');
+            canvas.drawText('NAU8822 recovered', 4, y + lineH, '#ffab3d');
             // Show truncated output
             if (output) {
                 var lines = output.split('\n');
                 for (var i = 0; i < lines.length && i < 5; i++) {
                     var line = lines[i];
                     if (line.length > 42) line = line.substring(0, 40) + '..';
-                    canvas.drawText(line, 4, y + lineH * (i + 2), '#f7c52f');
+                    canvas.drawText(line, 4, y + lineH * (i + 2), '#888');
                 }
             }
-            canvas.drawText('[Back]', 4, canvas.h - 9, '#f7c52f');
+            canvas.drawText('[Back]', 4, canvas.h - 9, '#888');
             return;
         }
 
         // fail
-        canvas.drawText('Restart failed', 4, y, '#ffa550');
+        canvas.drawText('Restart failed', 4, y, '#ffab3d');
         if (output) {
             var failLines = output.split('\n');
             for (var j = 0; j < failLines.length && j < 6; j++) {
                 var fLine = failLines[j];
                 if (fLine.length > 42) fLine = fLine.substring(0, 40) + '..';
-                canvas.drawText(fLine, 4, y + lineH * (j + 1), '#f7c52f');
+                canvas.drawText(fLine, 4, y + lineH * (j + 1), '#888');
             }
         }
-        canvas.drawText('[Back]', 4, canvas.h - 9, '#f7c52f');
+        canvas.drawText('[Back]', 4, canvas.h - 9, '#888');
     };
 
     return RestartDriverScene;

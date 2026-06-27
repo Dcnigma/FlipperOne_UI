@@ -10,7 +10,7 @@ var SubMenuScene = (function() {
     //   - selector frame x:      4 (canvas-left padding)
     var CONTAINER_X = 5;
     var CONTAINER_W = 224;
-    var DIVIDER_COLOR = '#824704';
+    var DIVIDER_COLOR = '#ed9b2f';
     var ANIMATED_ICON_FRAME_MS = 200;
 
     var VISIBLE_COUNT = 5;
@@ -350,7 +350,7 @@ var SubMenuScene = (function() {
     };
 
     SubMenuScene.prototype.render = function(canvas) {
-        canvas.clear('#ffa550');
+        canvas.clear('#ffab3d');
         // Header: a custom renderer takes precedence (e.g. the
         // Power-menu demo's dev-label + battery chrome); otherwise
         // the default status bar draws unless this instance opted
@@ -376,7 +376,7 @@ var SubMenuScene = (function() {
                 : [this.title]);
         if (!crumbTitles || !crumbTitles.length) crumbTitles = [this.title];
         var crumbTrail = '> ' + crumbTitles.join(' > ');
-        HaxrcorpFont16.draw(canvas.ctx, crumbTrail, this.breadcrumbX, this.breadcrumbY, '#824704');
+        HaxrcorpFont16.draw(canvas.ctx, crumbTrail, this.breadcrumbX, this.breadcrumbY, '#000');
 
         // Selector width tracks scrollbar visibility; the gray divider
         // matches the selector's straight edge (width − 2×radius).

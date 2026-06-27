@@ -921,7 +921,7 @@ var TVMB_PRESET_CMD = {
     // explicitly — without it libwayland can't find the socket and
     // Kodi falls back to GBM, which collides with KWin on the HDMI
     // and renders nothing. WAYLAND_DISPLAY picks the session's socket.
-    'Kodi TV':       "su - user -c 'XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-0 kodi'",
+    'Kodi TV':       "su - user -c 'kodi'",
     'Linux Desktop': "su - user -c 'weston'"
     // 'AirPlay' deferred — needs a video-capable RPiPlay/uxplay
     // build and TBD audio routing.

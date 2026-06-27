@@ -13,10 +13,10 @@ var TVMediaBoxScene = (function() {
     var TITLE_H = 16;
 
     // TV remote panel — "open" phase (Phase 01): 107 × 119, right edge
-    // 5 px from the screen edge (600 + 107 = 251). The "closed" phase
+    // 5 px from the screen edge (144 + 107 = 251). The "closed" phase
     // (Phase 02) is the TV remote button's own rect, read live from the
     // button; pressing the button tweens the frame between the two.
-    var REMOTE_OPEN    = { x: 600, y: 35, w: 107, h: 119 };
+    var REMOTE_OPEN    = { x: 144, y: 35, w: 107, h: 119 };
     var REMOTE_ANIM_MS = 180;   // tween duration each way
 
     // CEC support-detection knobs. We probe `tv-present` quickly on
@@ -232,7 +232,7 @@ var TVMediaBoxScene = (function() {
         // is detected asleep (standby). Wakes it and switches it to
         // our HDMI input via the CEC start-tv path.
         this._wakeBtn = new UI.RightButton('Wake', 48, 'run',
-            function() { self._handleWake(); }, 1024);
+            function() { self._handleWake(); }, 256);
 
         // Body frame — decorative card that tucks underneath the title
         // bar. y=16 puts the top 13 px (with the rounded corners) behind
@@ -1322,7 +1322,7 @@ var TVMediaBoxScene = (function() {
     };
 
     TVMediaBoxScene.prototype.render = function(canvas) {
-        canvas.clear('#ffa550');
+        canvas.clear('#ffab3d');
         // The main TV window is always drawn. The TV remote view lays a
         // d-pad panel on top of it (an overlay, not a separate screen).
         // The Screen Keyboard is a full dedicated view (it clears and
@@ -1352,7 +1352,7 @@ var TVMediaBoxScene = (function() {
         // icon at its left and the app name in the chunky Sporty font —
         // the shared app-screen idiom (see Internet radio).
         var TITLE_Y = UI.STATUS_BAR_H;
-        ctx.fillStyle = '#754f1c';
+        ctx.fillStyle = '#D9D9D9';
         ctx.fillRect(0, TITLE_Y, canvas.w, TITLE_H);
 
         if (typeof Icons !== 'undefined' && Icons.media) {
@@ -1415,7 +1415,7 @@ var TVMediaBoxScene = (function() {
         // around it). The 11-row HaxrcorpFont16 cell leaves blank rows
         // below the caps, so this keeps the glyph optically centred.
         var infoY = 49;
-        HaxrcorpFont16.draw(ctx, infoText, infoX, infoY, '#ffa550');
+        HaxrcorpFont16.draw(ctx, infoText, infoX, infoY, '#ffab3d');
 
         // Per-state screen content on the TV's screen area. ON / Off
         // show a centred glyph (tv_screen_on / tv_screen_off), Checking
@@ -1574,7 +1574,7 @@ var TVMediaBoxScene = (function() {
         new ResponsiveFrame({
             x: r.x, y: r.y, width: r.w, height: r.h,
             anchorH: 'left', anchorV: 'top',
-            fillColor: '#ffa550', showFill: true,
+            fillColor: '#ffab3d', showFill: true,
             strokeColor: '#000', showStroke: true,
             cornerRadius: 4,
             corners: { tl: true, tr: true, bl: true, br: true }
@@ -1591,7 +1591,7 @@ var TVMediaBoxScene = (function() {
         new ResponsiveFrame({
             x: ax, y: ay, width: aw, height: 4,
             anchorH: 'left', anchorV: 'top',
-            fillColor: '#eda74c', showFill: true, showStroke: false,
+            fillColor: '#c48021', showFill: true, showStroke: false,
             cornerRadius: 2,
             // Top corners rounded; bottom corners square so the handle
             // sits flush against the screen's bottom edge.
@@ -1647,7 +1647,7 @@ var TVMediaBoxScene = (function() {
         new ResponsiveFrame({
             x: FX, y: FY, width: FW, height: FH,
             anchorH: 'left', anchorV: 'top',
-            fillColor: '#ffa550', showFill: true,
+            fillColor: '#ffab3d', showFill: true,
             strokeColor: '#000', showStroke: true,
             cornerRadius: 4,
             corners: { tl: true, tr: true, bl: true, br: true }
@@ -1700,7 +1700,7 @@ var TVMediaBoxScene = (function() {
             x: X, y: Y, width: W, height: H,
             anchorH: 'left', anchorV: 'top',
             strokeColor: '#000', showStroke: true,
-            fillColor:   '#ffa550', showFill:   true,
+            fillColor:   '#ffab3d', showFill:   true,
             cornerRadius: 4,
             corners: { tl: true, tr: true, bl: true, br: true }
         });
@@ -1737,7 +1737,7 @@ var TVMediaBoxScene = (function() {
 
         if (m.state === 'missing') {
             centerSporty('Install dependencies?', titleY);
-            centerHaxrcorp('Needed for HDMI & CEC info', bodyY, '#faa134');
+            centerHaxrcorp('Needed for HDMI & CEC info', bodyY, '#666');
             this._drawStackedButton(canvas, BTN_X, btn1Y, BTN_W, BTN_H, 'Install', m.buttonIndex === 0);
             this._drawStackedButton(canvas, BTN_X, btn2Y, BTN_W, BTN_H, 'Cancel',  m.buttonIndex === 1);
             return;
@@ -1752,7 +1752,7 @@ var TVMediaBoxScene = (function() {
             if (t) { lastLine = t; break; }
         }
         if (lastLine.length > 28) lastLine = lastLine.slice(0, 26) + '..';
-        centerHaxrcorp(lastLine, bodyY, '#faa134');
+        centerHaxrcorp(lastLine, bodyY, '#666');
         this._drawStackedButton(canvas, BTN_X, btn1Y, BTN_W, BTN_H, 'Retry',  m.buttonIndex === 0);
         this._drawStackedButton(canvas, BTN_X, btn2Y, BTN_W, BTN_H, 'Cancel', m.buttonIndex === 1);
     };
@@ -1846,7 +1846,7 @@ var TVMediaBoxScene = (function() {
                 itemY + 1, '#000');
             if (i2 === this._dropdownIndex) selectedItemY = itemY;
             if (i2 < n - 1) {
-                canvas.drawHLine(chipX + 1, itemY + ITEM_H, W - 2, '#eda74c');
+                canvas.drawHLine(chipX + 1, itemY + ITEM_H, W - 2, '#c48021');
             }
         }
 
@@ -1884,7 +1884,7 @@ var TVMediaBoxScene = (function() {
             x: X, y: Y, width: W, height: H,
             anchorH: 'left', anchorV: 'top',
             strokeColor: '#000', showStroke: true,
-            fillColor:   '#ffa550', showFill:   true,
+            fillColor:   '#ffab3d', showFill:   true,
             cornerRadius: 4,
             corners: { tl: true, tr: true, bl: true, br: true }
         });

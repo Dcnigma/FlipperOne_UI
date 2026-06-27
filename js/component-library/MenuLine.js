@@ -82,8 +82,8 @@ var MenuLine = (function() {
         // here so the text/icon read as white over whatever fill the
         // scene draws behind them.
         if (this.state === STATE_PRESSED) {
-            textColor = '#ffa550';
-            iconColor = '#ffa550';
+            textColor = '#ffab3d';
+            iconColor = '#ffab3d';
         }
 
         // "active" lines (SELECTED or PRESSED) switch to Born2bSportyV2
@@ -161,11 +161,11 @@ var MenuLine = (function() {
         var status = this.statusProvider ? this.statusProvider() : this.status;
         if (status) {
             // Status text is dimmer than the label when the row isn't
-            // highlighted: #999 in DEFAULT, #000 in SELECTED, inherits
+            // highlighted: #c48021 in DEFAULT, #000 in SELECTED, inherits
             // white from `textColor` in PRESSED.
             var statusColor = this.state === STATE_PRESSED
                 ? textColor
-                : (active ? '#000' : '#eda74c');
+                : (active ? '#000' : '#c48021');
             if ((status === '< ON >' || status === '< OFF >')
                     && typeof this.onAdjust !== 'function') {
                 // Toggle-style status: show the `< value >` layout only

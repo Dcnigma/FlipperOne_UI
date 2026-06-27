@@ -31,13 +31,13 @@ var DesktopComputerScene = (function() {
     };
 
     DesktopComputerScene.prototype.render = function(canvas) {
-        canvas.clear('#ffa550');
+        canvas.clear('#ffab3d');
         var ctx = canvas.ctx;
         if (typeof UI !== 'undefined' && UI.drawStatusBar) {
             UI.drawStatusBar(canvas, '');
         }
         var TITLE_Y = UI.STATUS_BAR_H;
-        ctx.fillStyle = '#754f1c';
+        ctx.fillStyle = '#D9D9D9';
         ctx.fillRect(0, TITLE_Y, canvas.w, TITLE_H);
         if (this.icon) {
             canvas.drawSprite(this.icon, 2, TITLE_Y + 1, '#000');
@@ -49,7 +49,7 @@ var DesktopComputerScene = (function() {
         var msgW = HaxrcorpFont16.textWidth(msg);
         HaxrcorpFont16.draw(ctx, msg,
             Math.floor((canvas.w - msgW) / 2),
-            Math.floor((canvas.h - 11) / 2), '#faa134');
+            Math.floor((canvas.h - 11) / 2), '#666');
     };
 
     return DesktopComputerScene;

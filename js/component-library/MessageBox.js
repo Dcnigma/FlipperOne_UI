@@ -76,8 +76,8 @@ var MessageBox = (function() {
 
         // Clamp to screen boundaries
         var frameRightPadding = 6;
-        var canvasWidth = 1024;
-        var canvasHeight = 600;
+        var canvasWidth = 256;
+        var canvasHeight = 144;
 
         if (this.boxX < 0) {
             this.boxX = 0;
@@ -107,7 +107,7 @@ var MessageBox = (function() {
         var ctx = canvas.ctx;
 
         // Draw rounded rectangle background
-        ctx.fillStyle = '#ffa550';
+        ctx.fillStyle = '#ffab3d';
 
         // Center column
         ctx.fillRect(this.boxX + this.radius, this.boxY, this.boxWidth - this.radius * 2, this.boxHeight);
@@ -210,7 +210,7 @@ var MessageBox = (function() {
         }
 
         // White vertical line
-        ctx.fillStyle = '#ffa550';
+        ctx.fillStyle = '#ffab3d';
         ctx.fillRect(this.tailX + this.tailStripWidth + this.tailOffsetX - 1, this.tailY - 8, 1, 8);
 
         // Draw text

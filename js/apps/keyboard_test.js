@@ -252,8 +252,8 @@ var TextInputScreen = (function() {
         var TAB_BTN_W = 48;
         var TAB_BTN_H = 14;
         var TAB_BTN_X = 52;
-        var SCREEN_W  = 1024;
-        var SCREEN_H  = 600;
+        var SCREEN_W  = 256;
+        var SCREEN_H  = 144;
         var tabBtnY   = SCREEN_H - 2 - TAB_BTN_H;
         var BACKSPACE_BTN_X = SCREEN_W - 52 - TAB_BTN_W;
         this._123Btn       = new UI.NumericTabButton('123', TAB_BTN_X, tabBtnY, TAB_BTN_W, 'edit', function() { self._toggleLayout(); });
@@ -581,7 +581,7 @@ var TextInputScreen = (function() {
             x: X, y: Y, width: W, height: H,
             anchorH: 'left', anchorV: 'top',
             strokeColor: '#000', showStroke: true,
-            fillColor:   '#ffa550', showFill:   true,
+            fillColor:   '#ffab3d', showFill:   true,
             cornerRadius: 4,
             corners: { tl: true, tr: true, bl: true, br: true }
         }).render(canvas);
@@ -602,7 +602,7 @@ var TextInputScreen = (function() {
         var body = "Your text won't be saved.";
         var bodyW = HaxrcorpFont16.textWidth(body);
         HaxrcorpFont16.draw(ctx, body,
-            X + Math.floor((W - bodyW) / 2), bodyY, '#faa134');
+            X + Math.floor((W - bodyW) / 2), bodyY, '#666');
 
         this._drawDiscardModalButton(canvas, BTN_X, btn1Y, BTN_W, BTN_H,
             'Keep',    m.buttonIndex === 0);
@@ -1007,7 +1007,7 @@ var TextInputScreen = (function() {
 
     TextInputScreen.prototype.render = function(canvas) {
         var ctx = canvas.ctx;
-        canvas.clear('#ffa550');
+        canvas.clear('#ffab3d');
 
         // Status bar (kept on top — modal frame sits below it).
         UI.drawStatusBar(canvas, '');
@@ -1052,7 +1052,7 @@ var TextInputScreen = (function() {
             width: inputW, height: inputH,
             anchorH: 'left', anchorV: 'top',
             showStroke: false,
-            fillColor: '#824704', showFill: true,
+            fillColor: '#ed9b2f', showFill: true,
             cornerRadius: 3,
             corners: { tl: true, tr: true, bl: true, br: true }
         });

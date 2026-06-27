@@ -73,7 +73,7 @@ var TouchpadAbsScene = (function() {
     };
 
     TouchpadAbsScene.prototype.render = function(canvas) {
-        canvas.clear('#ffa550');
+        canvas.clear('#ffab3d');
         UI.drawStatusBar(canvas, 'Touchpad');
 
         if (!seen) {
@@ -92,7 +92,7 @@ var TouchpadAbsScene = (function() {
         var ago = lastMsgAt ? (Date.now() - lastMsgAt) : -1;
         var dbg = 'm:' + msgCount + ' r:' + renderCount +
                   ' tr:' + transitions + ' ago:' + ago + 'ms';
-        canvas.drawText(dbg, 4, 134, '#f7c52f');
+        canvas.drawText(dbg, 4, 134, '#888');
     };
 
     return TouchpadAbsScene;

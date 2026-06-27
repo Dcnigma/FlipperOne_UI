@@ -15,12 +15,12 @@ var EthernetScene = (function() {
     // (every interface connected) still fits inside CANVAS_H:
     //
     //   TAB_Y + MAX_TABS × TAB_H_CONNECTED + (MAX_TABS − 1) × TAB_GAP ≤ CANVAS_H
-    //   26    + 3 × 34                      + 2 × 3                    = 134 ≤ 600 ✓
+    //   26    + 3 × 34                      + 2 × 3                    = 134 ≤ 144 ✓
     //
     // 10 px slack lands at the bottom. To bump TAB_Y further down,
     // reduce TAB_H_CONNECTED to keep the invariant; otherwise the
     // last tab will clip against the canvas bottom (no scrolling).
-    var CANVAS_H              = 600;
+    var CANVAS_H              = 144;
     var TAB_H_CONNECTED       = 34;
     var MAX_TABS              = 3;        // ETH0, ETH1, USB-ETH
     var TAB_Y                 = 26;
@@ -176,7 +176,7 @@ var EthernetScene = (function() {
     var MODAL_PAD_Y    = 6;
     var MODAL_LINE_H   = 12;
     var MODAL_DIVIDER_H = 4;     // total height (line at center)
-    var MODAL_DIVIDER_COLOR = '#E5E5E5';
+    var MODAL_DIVIDER_COLOR = '#613708';
     var MODAL_LABEL_GAP = 4;     // gap between "Label:" and value
     var MODAL_INDENT   = 8;      // indent for array values under a section header
     var MODAL_METRIC_GAP = 12;   // horizontal gap between Speed / RX / TX segments
@@ -298,7 +298,7 @@ var EthernetScene = (function() {
             anchorH: 'left', anchorV: 'top',
             cornerRadius: 4,
             strokeColor: '#000',
-            fillColor: '#ffa550',
+            fillColor: '#ffab3d',
             showStroke: true, showFill: true
         });
         this.viewportH = MODAL_H - MODAL_PAD_Y * 2;
@@ -343,7 +343,7 @@ var EthernetScene = (function() {
             HaxrcorpFont16.draw(canvas.ctx, msg,
                 MODAL_X + Math.floor((MODAL_W - w) / 2),
                 MODAL_Y + Math.floor((MODAL_H - 7) / 2),
-                '#999');
+                '#c48021');
             return;
         }
 
@@ -522,13 +522,13 @@ var EthernetScene = (function() {
     };
 
     EthernetScene.prototype.render = function(canvas) {
-        canvas.clear('#ffa550');
+        canvas.clear('#ffab3d');
         UI.drawStatusBar(canvas, '');
 
         // Breadcrumb.
         var titles = this.sceneManager.breadcrumb();
         var breadcrumb = '> ' + titles.join(' > ');
-        HaxrcorpFont16.draw(canvas.ctx, breadcrumb, BREADCRUMB_X, UI.STATUS_BAR_H + 2, '#eda74c');
+        HaxrcorpFont16.draw(canvas.ctx, breadcrumb, BREADCRUMB_X, UI.STATUS_BAR_H + 2, '#c48021');
 
         if (loading && !data) {
             var phColor = placeholderColor();
@@ -547,7 +547,7 @@ var EthernetScene = (function() {
             return;
         }
         if (error && !data) {
-            canvas.drawText('Error', 4, TAB_Y, '#f7c52f');
+            canvas.drawText('Error', 4, TAB_Y, '#888');
             return;
         }
 

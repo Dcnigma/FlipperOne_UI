@@ -1097,7 +1097,7 @@ var VoiceRecorderScene = (function() {
             x: X, y: Y, width: W, height: H,
             anchorH: 'left', anchorV: 'top',
             strokeColor: '#000', showStroke: true,
-            fillColor:   '#ffa550', showFill:   true,
+            fillColor:   '#ffab3d', showFill:   true,
             cornerRadius: 4,
             corners: { tl: true, tr: true, bl: true, br: true }
         }).render(canvas);
@@ -1135,7 +1135,7 @@ var VoiceRecorderScene = (function() {
         }
         if (m.state === 'missing') {
             centerSporty('Install ' + fmtLabel + '?', titleY);
-            centerHaxrcorp('Encoder needed for recording', bodyY, '#faa134');
+            centerHaxrcorp('Encoder needed for recording', bodyY, '#666');
             this._drawStackedButton(canvas, BTN_X, btn1Y, BTN_W, BTN_H,
                 'Install', m.buttonIndex === 0);
             this._drawStackedButton(canvas, BTN_X, btn2Y, BTN_W, BTN_H,
@@ -1150,7 +1150,7 @@ var VoiceRecorderScene = (function() {
             if (t) { lastLine = t; break; }
         }
         if (lastLine.length > 28) lastLine = lastLine.slice(0, 26) + '..';
-        centerHaxrcorp(lastLine, bodyY, '#faa134');
+        centerHaxrcorp(lastLine, bodyY, '#666');
         this._drawStackedButton(canvas, BTN_X, btn1Y, BTN_W, BTN_H,
             'Retry',  m.buttonIndex === 0);
         this._drawStackedButton(canvas, BTN_X, btn2Y, BTN_W, BTN_H,
@@ -1211,7 +1211,7 @@ var VoiceRecorderScene = (function() {
             x: X, y: Y, width: W, height: H,
             anchorH: 'left', anchorV: 'top',
             strokeColor: '#000', showStroke: true,
-            fillColor:   '#ffa550', showFill:   true,
+            fillColor:   '#ffab3d', showFill:   true,
             cornerRadius: 4,
             corners: { tl: true, tr: true, bl: true, br: true }
         }).render(canvas);
@@ -1713,13 +1713,13 @@ var VoiceRecorderScene = (function() {
     // gray header carrying the app icon + name in
     // Born2bSportyV2Medium.
     var TITLE_H        = 16;
-    var TITLE_FILL     = '#754f1c';
+    var TITLE_FILL     = '#D9D9D9';
     var ICON_X         = 2;     // 2 px in from the left edge
     var TITLE_TEXT_X   = 18;    // 14-px icon ends at col 15, then 2 px gap
     var TITLE_TEXT_DY  = 1;     // baseline drop below status-bar bottom
 
     VoiceRecorderScene.prototype.render = function(canvas) {
-        canvas.clear('#ffa550');
+        canvas.clear('#ffab3d');
         // (1) Standard status bar across the top. Empty title —
         // the gray app-title bar below carries the app name, so
         // the status bar just shows battery / wifi / etc.
@@ -1958,7 +1958,7 @@ var VoiceRecorderScene = (function() {
                 fnText = this._recordingDisplayName || this._fileName;
             }
             Born2bSportyV2Medium.draw(canvas.ctx, fnText,
-                FN_TEXT_X, FN_TEXT_Y, '#ffa550');
+                FN_TEXT_X, FN_TEXT_Y, '#ffab3d');
             // Horizontal white hairline 6 px below the visible
             // bottom of the file-name text. Born2bSportyV2Medium's
             // visible glyph spans rows 2..11 of its 18-row
@@ -1967,7 +1967,7 @@ var VoiceRecorderScene = (function() {
             // y = FN_TEXT_Y + 17. Spans the full width of the
             // recording rectangle.
             canvas.drawHLine(REC_RECT_X, FN_TEXT_Y + 17,
-                REC_RECT_W, '#ffa550');
+                REC_RECT_W, '#ffab3d');
 
             // Record lamp — swaps icon based on pause state:
             //   recording   → Icons.record_circle  (10×10)
@@ -1998,9 +1998,9 @@ var VoiceRecorderScene = (function() {
                     // Paused shows the pause icon static (below).
                     var lampPulse = 0.5 + 0.5 * Math.sin(Date.now() / 250);
                     var lampAlpha = 0.35 + 0.65 * lampPulse;
-                    canvas.drawSprite(lampIcon, lampX, lampY, '#ffa550', lampAlpha);
+                    canvas.drawSprite(lampIcon, lampX, lampY, '#ffab3d', lampAlpha);
                 } else {
-                    canvas.drawSprite(lampIcon, lampX, lampY, '#ffa550');
+                    canvas.drawSprite(lampIcon, lampX, lampY, '#ffab3d');
                 }
             }
 
@@ -2025,7 +2025,7 @@ var VoiceRecorderScene = (function() {
             // the lamp's centre y (100) the draw-y lands at
             // 100 - 7 (1-px nudge to balance optical centring).
             Born2bSportyV2Medium.draw(canvas.ctx, tcText,
-                lampX + LAMP_W + 4, lampY + (LAMP_H / 2) - 7, '#ffa550');
+                lampX + LAMP_W + 4, lampY + (LAMP_H / 2) - 7, '#ffab3d');
 
             // Format + Folder annotations along the bottom edge
             // of the recording rectangle. Format on the left, 6
@@ -2037,10 +2037,10 @@ var VoiceRecorderScene = (function() {
             var formatText    = this._pickers.format.current || '';
             var formatTextX   = REC_RECT_X + 6;
             HaxrcorpFont16.draw(canvas.ctx, formatText,
-                formatTextX, BOTTOM_TEXT_Y, '#ffa550');
+                formatTextX, BOTTOM_TEXT_Y, '#ffab3d');
             var formatW       = HaxrcorpFont16.textWidth(formatText);
             HaxrcorpFont16.draw(canvas.ctx, this._folderName,
-                formatTextX + formatW + 7, BOTTOM_TEXT_Y, '#ffa550');
+                formatTextX + formatW + 7, BOTTOM_TEXT_Y, '#ffab3d');
 
             // Right-aligned stack of three labels along the
             // recording rectangle's right edge, 5 px in from
@@ -2057,7 +2057,7 @@ var VoiceRecorderScene = (function() {
             var rightTextX    = REC_RECT_X + REC_RECT_W - RIGHT_PAD;
             function drawRightAligned(ctx, text, y) {
                 var w = HaxrcorpFont16.textWidth(text);
-                HaxrcorpFont16.draw(ctx, text, rightTextX - w, y, '#ffa550');
+                HaxrcorpFont16.draw(ctx, text, rightTextX - w, y, '#ffab3d');
             }
 
             // Pick a bytes-per-second rate: prefer the
@@ -2305,7 +2305,7 @@ var VoiceRecorderScene = (function() {
             if (i === this._dropdownIndex) selectedItemY = itemY;
             if (i < n - 1) {
                 canvas.drawHLine(chipX + 1, itemY + ITEM_H,
-                    W - 2, '#eda74c');
+                    W - 2, '#c48021');
             }
         }
 

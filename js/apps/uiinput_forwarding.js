@@ -111,12 +111,12 @@ var UIInputForwardingScene = (function() {
     // 16-px gray title strip flush beneath it carrying the app
     // name in Born2bSportyV2Medium.
     var TITLE_H       = 16;
-    var TITLE_FILL    = '#754f1c';
+    var TITLE_FILL    = '#D9D9D9';
     var TITLE_TEXT_X  = 4;    // no icon → text flush-left
     var TITLE_TEXT_DY = 1;
 
     UIInputForwardingScene.prototype.render = function(canvas) {
-        canvas.clear('#ffa550');
+        canvas.clear('#ffab3d');
         var ctx = canvas.ctx;
 
         // (1) Standard status bar — empty title; the gray strip
@@ -138,7 +138,7 @@ var UIInputForwardingScene = (function() {
             HaxrcorpFont16.draw(ctx, label, 6, y, '#000');
             var s  = on ? 'ON' : 'OFF';
             var sw = HaxrcorpFont16.textWidth(s);
-            HaxrcorpFont16.draw(ctx, s, canvas.w - 6 - sw, y, on ? '#000' : '#eda74c');
+            HaxrcorpFont16.draw(ctx, s, canvas.w - 6 - sw, y, on ? '#000' : '#c48021');
         }
         var y0 = titleY + TITLE_H + 8;
         row('Keys forwarding',     this._keysRunning,     y0);

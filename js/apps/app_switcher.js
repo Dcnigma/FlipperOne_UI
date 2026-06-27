@@ -90,22 +90,22 @@ var AppSwitcherScene = (function() {
     var KILLED_STATE  = S(-260, 22, 252, 100, 4, 4, 4, 4);
 
     // Off-screen-bottom source used by the wrap-hint slide-in. y is
-    // anchored at the canvas height (600) since drawCard's wrap-hint
+    // anchored at the canvas height (144) since drawCard's wrap-hint
     // override now leaves y untouched (only grows h by +6). With
-    // WRAP_HINT_START.y = 600, the card's top edge starts exactly
+    // WRAP_HINT_START.y = 144, the card's top edge starts exactly
     // at the canvas bottom — fully off-screen — and lerps up to
     // POSITIONS[-2].y at the slide-in's end. Corners pre-set to the
     // wrap-hint shape (TL rounded, others square) so the lerped
     // stroke geometry doesn't morph mid-slide; drawCard overrides
     // corners after the lerp anyway, but matching here keeps the
     // lerp results sensible if anything ever reads them.
-    var WRAP_HINT_START = S(50, 600, 252, 13, 4, 0, 0, 0);
+    var WRAP_HINT_START = S(50, 144, 252, 13, 4, 0, 0, 0);
 
     // N=2 intro source for B (the "previous" app sliding up from
     // below the canvas into the focused slot). Same x/w/h/corners
     // as POSITIONS[0] but y anchored to the canvas bottom so at
     // t=0 the entire frame sits off-screen below.
-    var INTRO_B_FROM_BOTTOM = S(2, 600, 258, 100, 4, 4, 4, 4);
+    var INTRO_B_FROM_BOTTOM = S(2, 144, 258, 100, 4, 4, 4, 4);
 
     // ── Phase state machine ─────────────────────────────────────
     var PHASE_OPENING   = 'opening';
@@ -164,12 +164,12 @@ var AppSwitcherScene = (function() {
     var TITLE_BAR_H_DEFAULT = 14;
     var TITLE_BAR_H_BY_POSITION = {};
     TITLE_BAR_H_BY_POSITION[ 0] = 16;
-    var TITLE_BAR_BG_DEFAULT = '#805203';
+    var TITLE_BAR_BG_DEFAULT = '#6E6E6E';
     var TITLE_BAR_BG_BY_POSITION = {};
     TITLE_BAR_BG_BY_POSITION[ 0] = '#000';      // focused
     // -1, +1, -2 render as tabs (white card via the TAB_CONFIG
     // path) rather than via this colored bar map.
-    var TITLE_BAR_FG = '#ffa550';
+    var TITLE_BAR_FG = '#ffab3d';
     // Title-bar typeface — Born2bSportyV2Medium for that chunky,
     // OS-chrome look. Mathematical centering gives 0 for a 14-px
     // bar and 1 for a 16-px bar, but the design calls for the text
@@ -194,9 +194,9 @@ var AppSwitcherScene = (function() {
     //   slot ABOVE focused (+1)      → omit the BOTTOM stroke.
     // `color` drives both the label and the stroke; deeper slots
     // get progressively lighter shades.
-    TAB_CONFIG[-2] = { openEdge: 'top',    labelDx: 0, labelDy: 0, color: '#f5b153' };
-    TAB_CONFIG[-1] = { openEdge: 'top',    labelDx: 1, labelDy: 0, color: '#faa134666' };
-    TAB_CONFIG[ 1] = { openEdge: 'bottom', labelDx: 0, labelDy: 1, color: '#faa134666' };
+    TAB_CONFIG[-2] = { openEdge: 'top',    labelDx: 0, labelDy: 0, color: '#A7A7A7' };
+    TAB_CONFIG[-1] = { openEdge: 'top',    labelDx: 1, labelDy: 0, color: '#666666' };
+    TAB_CONFIG[ 1] = { openEdge: 'bottom', labelDx: 0, labelDy: 1, color: '#666666' };
 
     function now() {
         return (typeof performance !== 'undefined' && performance.now)
@@ -543,7 +543,7 @@ var AppSwitcherScene = (function() {
             };
         }
 
-        fillBody(canvas, state, '#ffa550');
+        fillBody(canvas, state, '#ffab3d');
 
         // Interpolated |position|. For an idle card it's just the
         // integer position; mid-animation it's the lerped value
@@ -722,7 +722,7 @@ var AppSwitcherScene = (function() {
             } else if (TAB_CONFIG[slot]) {
                 // Tab(slot).
                 var dragTabCfg = TAB_CONFIG[slot];
-                var dragTabColor = dragTabCfg.color || '#faa134666';
+                var dragTabColor = dragTabCfg.color || '#666666';
                 if (card.name) {
                     var dragLabelDy = dragTabCfg.labelDy + (isWrapHint ? 1 : 0);
                     HaxrcorpFont16.draw(canvas.ctx, card.name,
@@ -770,7 +770,7 @@ var AppSwitcherScene = (function() {
             addBodyClipPath(barCtx, state.x, state.y, state.w, state.h,
                 state.rTL, state.rTR, state.rBL, state.rBR);
             barCtx.clip();
-            barCtx.fillStyle = lerpColor('#000000', '#ffa550', posClamped);
+            barCtx.fillStyle = lerpColor('#000000', '#ffab3d', posClamped);
             barCtx.fillRect(state.x, state.y, state.w, 16);
             barCtx.restore();
         }
@@ -779,8 +779,8 @@ var AppSwitcherScene = (function() {
         // 4-sided black stroke. As we approach ±1 the bg drifts to
         // white and the stroke to gray.
         if (focusedAlpha > 0.001) {
-            var fBg     = lerpColor('#000000', '#ffa550', posClamped);
-            var fStroke = lerpColor('#000000', '#faa134666', posClamped);
+            var fBg     = lerpColor('#000000', '#ffab3d', posClamped);
+            var fStroke = lerpColor('#000000', '#666666', posClamped);
             ctx.save();
             ctx.globalAlpha = ctx.globalAlpha * focusedAlpha;
             drawTitleBar(canvas, state, card.name, fBg, 16, card.icon, 1);
@@ -794,7 +794,7 @@ var AppSwitcherScene = (function() {
         var tabCfg = TAB_CONFIG[card.position]
             || (card.animFrom !== null ? TAB_CONFIG[card.animFrom] : null);
         if (tabAlpha > 0.001 && tabCfg) {
-            var tabColor = tabCfg.color || '#faa134666';
+            var tabColor = tabCfg.color || '#666666';
             ctx.save();
             ctx.globalAlpha = ctx.globalAlpha * tabAlpha;
             if (card.name) {
@@ -1846,7 +1846,7 @@ var AppSwitcherScene = (function() {
             }
         }
 
-        canvas.clear('#ffa550');
+        canvas.clear('#ffab3d');
 
         // Empty stack — no apps have been launched. Show a hint so
         // the screen doesn't look broken. Animation is skipped here.
@@ -1856,7 +1856,7 @@ var AppSwitcherScene = (function() {
             HaxrcorpFont16.draw(canvas.ctx, msg,
                 Math.floor((canvas.w - w) / 2),
                 Math.floor((canvas.h - 7) / 2),
-                '##1c1b1b');
+                '#6E6E6E');
             return;
         }
 

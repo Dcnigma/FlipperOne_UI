@@ -328,8 +328,8 @@ var UI = (function() {
         // with #000 fg, for example.
         opts = opts || {};
         var bg  = opts.bg  || '#000';
-        var fg  = opts.fg  || '#ffa550';
-        var dim = opts.dim || '#ccc';  // empty signal bars / soft accents
+        var fg  = opts.fg  || '#ffab3d';
+        var dim = opts.dim || '#707070';  // empty signal bars / soft accents
 
         canvas.drawRect(0, 0, canvas.w, STATUS_BAR_H, bg);
         var top = STATUS_BAR_PAD_TOP;
@@ -439,10 +439,10 @@ var UI = (function() {
             var y = startY + i * ITEM_H;
 
             if (idx === selectedIndex) {
-                canvas.drawRect(0, y, canvas.w - SCROLLBAR_W - 1, ITEM_H, '#ffa550');
+                canvas.drawRect(0, y, canvas.w - SCROLLBAR_W - 1, ITEM_H, '#ffab3d');
                 canvas.drawText('>' + items[idx], PAD_LEFT, y + 3, '#000');
             } else {
-                canvas.drawText(' ' + items[idx], PAD_LEFT, y + 3, '#ffa550');
+                canvas.drawText(' ' + items[idx], PAD_LEFT, y + 3, '#ffab3d');
             }
         }
 
@@ -462,7 +462,7 @@ var UI = (function() {
         var maxOffset = totalItems - visibleItems;
         var thumbY = trackY + (maxOffset > 0 ? Math.floor((trackH - thumbH) * (scrollOffset / maxOffset)) : 0);
 
-        canvas.drawRect(trackX, thumbY, SCROLLBAR_W, thumbH, '#ffa550');
+        canvas.drawRect(trackX, thumbY, SCROLLBAR_W, thumbH, '#ffab3d');
     }
 
     function visibleCount(canvasHeight) {
@@ -583,7 +583,7 @@ var UI = (function() {
     function RightButton(text, w, action, onPress, screenW) {
         if (w > MAX_BTN_W) w = MAX_BTN_W;
         this.text    = text;
-        this.x       = (screenW || 1024) - w;
+        this.x       = (screenW || 256) - w;
         this.w       = w;
         this.pressed = false;
         this.disabled = false;
@@ -599,7 +599,7 @@ var UI = (function() {
     function RightButtonTopCut(text, w, action, onPress, screenW) {
         if (w > MAX_BTN_W) w = MAX_BTN_W;
         this.text    = text;
-        this.x       = (screenW || 1024) - w;
+        this.x       = (screenW || 256) - w;
         this.w       = w;
         this.pressed = false;
         this.disabled = false;
@@ -701,7 +701,7 @@ var UI = (function() {
 
         // Calculate body width: longest item text + left/right padding (7px each)
         var maxItemWidth = 0;
-        for (var i = 1; i < items.length; i++) {
+        for (var i = 0; i < items.length; i++) {
             var w = HaxrcorpFont16.textWidth(items[i]);
             if (w > maxItemWidth) maxItemWidth = w;
         }
@@ -714,12 +714,12 @@ var UI = (function() {
 
         // Position: left-aligned with button, 4px above bottom (where tab sits)
         this.x = btnX;
-        this.y = 600 - 14 - this.bodyH - 4;  // 600px screen height, 14px tab, 4px gap
+        this.y = 144 - 14 - this.bodyH - 4;  // 144px screen height, 14px tab, 4px gap
     }
 
     PopupMenuLeft.prototype.render = function(canvas) {
         // Draw shell (body + tab)
-        canvas.drawPopupLeft(this.x, this.y, this.bodyW, this.bodyH, this.tabW, '#ffa550', '#4d4d4d', '#000');
+        canvas.drawPopupLeft(this.x, this.y, this.bodyW, this.bodyH, this.tabW, '#ffab3d', '#363636', '#000');
 
         // Draw menu items
         for (var i = 0; i < this.items.length; i++) {
@@ -736,7 +736,7 @@ var UI = (function() {
             }
 
             // Draw item text (4px + 3px padding from left edge)
-            var textColor = (i === this.pressedIndex) ? '#ffa550' : '#000';
+            var textColor = (i === this.pressedIndex) ? '#ffab3d' : '#000';
             HaxrcorpFont16.draw(canvas.ctx, this.items[i], this.x + 7, iy + 1, textColor);
         }
 
@@ -819,14 +819,14 @@ var UI = (function() {
 
         // Position: centered on screen in container
         var BTN_W = 15;
-        var BTN_H = 46;
+        var BTN_H = 16;
         var CONTAINER_W = 250;
         var CONTAINER_H = 77;
         var cols = rows[0].length;
         var keyboardW = cols * BTN_W;
         var keyboardH = rows.length * BTN_H;
 
-        this.x = Math.floor((1024 - CONTAINER_W) / 2);
+        this.x = Math.floor((256 - CONTAINER_W) / 2);
         this.y = 75;  // 75px from top of screen — bumped 72 → 74 → 75 across two iteration passes so the keyboard chrome (and the inner-background rectangle drawn against it) sits 3 px lower under the input field. Pixel-perfect with the other rounded-corner chrome in the system.
         this.w = CONTAINER_W;
         this.h = CONTAINER_H;
@@ -896,7 +896,7 @@ var UI = (function() {
         canvas.drawKeyboard(this.x, this.y, this.rows,
             this.selectedRow, this.selectedCol,
             this.pressedRow, this.pressedCol,
-            '#ffa550', '#000', this.shiftState, this.langLabel,
+            '#ffab3d', '#000', this.shiftState, this.langLabel,
             wave, this.focused !== false,
             betweenCellsAndSelector);
     };
@@ -1244,22 +1244,22 @@ var UI = (function() {
         canvas.drawTabHeader(this.x, this.y, this.w, this.h);
         // Draw white text (centered vertically)
         var textY = this.y + Math.floor((this.h - 11) / 2);  // 11 is font height
-        HaxrcorpFont16.draw(canvas.ctx, this.text, this.x + 3, textY, '#ffa550');
+        HaxrcorpFont16.draw(canvas.ctx, this.text, this.x + 3, textY, '#ffab3d');
     };
 
     // ── TextInputBox ──────────────────────────────────────────────────────
     // Container for text input with rounded top corners
     // Positioned 16px from top, extends to keyboard at 70px
-    // Height: 54px, Width: 244px (1024 - 6px padding left - 6px padding right)
+    // Height: 54px, Width: 244px (256 - 6px padding left - 6px padding right)
     function TextInputBox() {
         this.x = 6;
         this.y = 16;
-        this.w = 244;  // 1024 - 12 (6px padding each side)
+        this.w = 244;  // 256 - 12 (6px padding each side)
         this.h = 54;  // 70 - 16
     }
 
     TextInputBox.prototype.render = function(canvas) {
-        canvas.drawTextInputBox(this.x, this.y, this.w, this.h, '#ffa550', '#000');
+        canvas.drawTextInputBox(this.x, this.y, this.w, this.h, '#ffab3d', '#000');
     };
 
     // ── InputField ────────────────────────────────────────────────────────────
@@ -1273,7 +1273,7 @@ var UI = (function() {
     }
 
     InputField.prototype.render = function(canvas) {
-        canvas.drawInputField(this.x, this.y, this.w, this.h, 3, '#ffa550', '#000');
+        canvas.drawInputField(this.x, this.y, this.w, this.h, 3, '#ffab3d', '#000');
     };
 
     // ── DeleteConfirmDialog ────────────────────────────────────────────────────
@@ -1297,7 +1297,7 @@ var UI = (function() {
         var boxY = Math.floor((canvas.h - boxH) / 2);
 
         // White background
-        canvas.drawRoundRect(boxX, boxY, boxW, boxH, 3, '#ffa550');
+        canvas.drawRoundRect(boxX, boxY, boxW, boxH, 3, '#ffab3d');
         // Black border
         canvas.drawRoundFrame(boxX, boxY, boxW, boxH, 3, '#000');
 

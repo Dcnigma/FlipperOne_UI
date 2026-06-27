@@ -59,20 +59,20 @@ var PowerScene = (function() {
         var lineH = 10;
 
         if (loading && !data) {
-            canvas.drawText('Loading...', 4, y, '#f7c52f');
-            canvas.drawText('[Back]', 4, canvas.h - 9, '#f7c52f');
+            canvas.drawText('Loading...', 4, y, '#888');
+            canvas.drawText('[Back]', 4, canvas.h - 9, '#888');
             return;
         }
 
         if (error && !data) {
-            canvas.drawText('Error reading power', 4, y, '#f7c52f');
-            canvas.drawText('[Back]', 4, canvas.h - 9, '#f7c52f');
+            canvas.drawText('Error reading power', 4, y, '#888');
+            canvas.drawText('[Back]', 4, canvas.h - 9, '#888');
             return;
         }
 
         if (!data || !data.available) {
-            canvas.drawText('No battery found', 4, y, '#f7c52f');
-            canvas.drawText('[Back]', 4, canvas.h - 9, '#f7c52f');
+            canvas.drawText('No battery found', 4, y, '#888');
+            canvas.drawText('[Back]', 4, canvas.h - 9, '#888');
             return;
         }
 
@@ -83,24 +83,24 @@ var PowerScene = (function() {
 
         if (charging) {
             // Lightning bolt icon
-            canvas.drawPixel(4 + 4, y, '#ffa550');
-            canvas.drawPixel(4 + 3, y + 1, '#ffa550');
-            canvas.drawPixel(4 + 2, y + 2, '#ffa550');
-            canvas.drawRect(4 + 1, y + 3, 4, 1, '#ffa550');
-            canvas.drawPixel(4 + 3, y + 4, '#ffa550');
-            canvas.drawPixel(4 + 2, y + 5, '#ffa550');
-            canvas.drawPixel(4 + 1, y + 6, '#ffa550');
-            canvas.drawText(statusStr, 14, y, '#ffa550');
+            canvas.drawPixel(4 + 4, y, '#ffab3d');
+            canvas.drawPixel(4 + 3, y + 1, '#ffab3d');
+            canvas.drawPixel(4 + 2, y + 2, '#ffab3d');
+            canvas.drawRect(4 + 1, y + 3, 4, 1, '#ffab3d');
+            canvas.drawPixel(4 + 3, y + 4, '#ffab3d');
+            canvas.drawPixel(4 + 2, y + 5, '#ffab3d');
+            canvas.drawPixel(4 + 1, y + 6, '#ffab3d');
+            canvas.drawText(statusStr, 14, y, '#ffab3d');
         } else if (full) {
-            canvas.drawText(statusStr, 4, y, '#ffa550');
+            canvas.drawText(statusStr, 4, y, '#ffab3d');
         } else {
             // Down arrow for discharging
-            canvas.drawRect(4 + 2, y, 1, 5, '#ffa550');
-            canvas.drawPixel(4 + 1, y + 3, '#ffa550');
-            canvas.drawPixel(4 + 3, y + 3, '#ffa550');
-            canvas.drawPixel(4, y + 4, '#ffa550');
-            canvas.drawPixel(4 + 4, y + 4, '#ffa550');
-            canvas.drawText(statusStr, 14, y, '#ffa550');
+            canvas.drawRect(4 + 2, y, 1, 5, '#ffab3d');
+            canvas.drawPixel(4 + 1, y + 3, '#ffab3d');
+            canvas.drawPixel(4 + 3, y + 3, '#ffab3d');
+            canvas.drawPixel(4, y + 4, '#ffab3d');
+            canvas.drawPixel(4 + 4, y + 4, '#ffab3d');
+            canvas.drawText(statusStr, 14, y, '#ffab3d');
         }
 
         // Time estimate on the right
@@ -112,51 +112,51 @@ var PowerScene = (function() {
         }
         if (timeStr) {
             var tw = canvas.textWidth(timeStr);
-            canvas.drawText(timeStr, canvas.w - 4 - tw, y, '#f7c52f');
+            canvas.drawText(timeStr, canvas.w - 4 - tw, y, '#888');
         }
 
         y += lineH + 4;
 
         // Row 2: Capacity bar
         var cap = data.capacity !== null ? data.capacity : 0;
-        canvas.drawText(cap + '%', 4, y, '#ffa550');
+        canvas.drawText(cap + '%', 4, y, '#ffab3d');
         var barX = 30;
         var barW = canvas.w - barX - 6;
         var barH = 5;
-        canvas.drawFrame(barX, y + 1, barW + 2, barH + 2, '#f7c52f');
+        canvas.drawFrame(barX, y + 1, barW + 2, barH + 2, '#888');
         var fillW = Math.round(barW * (cap / 100));
         if (fillW > 0) {
-            canvas.drawRect(barX + 1, y + 2, fillW, barH, '#ffa550');
+            canvas.drawRect(barX + 1, y + 2, fillW, barH, '#ffab3d');
         }
 
         y += lineH + 4;
 
         // Row 3: Charge stats
         if (data.chargeNow !== null && data.chargeFull !== null) {
-            canvas.drawText('Charge: ' + data.chargeNow + '/' + data.chargeFull + ' Ah', 4, y, '#ffa550');
+            canvas.drawText('Charge: ' + data.chargeNow + '/' + data.chargeFull + ' Ah', 4, y, '#ffab3d');
         } else {
-            canvas.drawText('Charge: --', 4, y, '#ffa550');
+            canvas.drawText('Charge: --', 4, y, '#ffab3d');
         }
         y += lineH;
 
         // Row 4: Voltage / Current
         var vStr = data.voltage !== null ? data.voltage + 'V' : '--';
         var iStr = data.current !== null ? data.current + 'A' : '--';
-        canvas.drawText(vStr + '  ' + iStr, 4, y, '#ffa550');
+        canvas.drawText(vStr + '  ' + iStr, 4, y, '#ffab3d');
         y += lineH;
 
         // Row 5: System power
         var pStr = data.power !== null ? data.power + ' W' : '-- W';
-        canvas.drawText('Power: ' + pStr, 4, y, '#ffa550');
+        canvas.drawText('Power: ' + pStr, 4, y, '#ffab3d');
 
         // Row 6: Temperature
         if (data.temp !== null) {
             y += lineH;
             var tempC = (data.temp / 10).toFixed(1);
-            canvas.drawText('Temp: ' + tempC + ' C', 4, y, '#ffa550');
+            canvas.drawText('Temp: ' + tempC + ' C', 4, y, '#ffab3d');
         }
 
-        canvas.drawText('[Back]', 4, canvas.h - 9, '#f7c52f');
+        canvas.drawText('[Back]', 4, canvas.h - 9, '#888');
     };
 
     return PowerScene;

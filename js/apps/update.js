@@ -104,44 +104,44 @@ var UpdateScene = (function() {
         var lineH = 9;
 
         if (state === 'checking') {
-            canvas.drawText('Checking for updates...', 4, y, '#f7c52f');
+            canvas.drawText('Checking for updates...', 4, y, '#888');
             return;
         }
 
         if (state === 'updating') {
-            canvas.drawText('Updating...', 4, y, '#ffa550');
-            canvas.drawText('Do not power off', 4, y + lineH, '#f7c52f');
+            canvas.drawText('Updating...', 4, y, '#ffab3d');
+            canvas.drawText('Do not power off', 4, y + lineH, '#888');
             return;
         }
 
         if (state === 'done') {
-            canvas.drawText('Update complete!', 4, y, '#ffa550');
-            canvas.drawText('Restarting...', 4, y + lineH, '#f7c52f');
+            canvas.drawText('Update complete!', 4, y, '#ffab3d');
+            canvas.drawText('Restarting...', 4, y + lineH, '#888');
             return;
         }
 
         if (state === 'fail') {
-            canvas.drawText('Update failed', 4, y, '#ffa550');
-            canvas.drawText(errorMsg, 4, y + lineH, '#f7c52f');
-            canvas.drawText('[Back]', 4, canvas.h - 9, '#f7c52f');
+            canvas.drawText('Update failed', 4, y, '#ffab3d');
+            canvas.drawText(errorMsg, 4, y + lineH, '#888');
+            canvas.drawText('[Back]', 4, canvas.h - 9, '#888');
             return;
         }
 
         if (state === 'error') {
-            canvas.drawText('Error: ' + errorMsg, 4, y, '#ffa550');
-            canvas.drawText('[Back]', 4, canvas.h - 9, '#f7c52f');
+            canvas.drawText('Error: ' + errorMsg, 4, y, '#ffab3d');
+            canvas.drawText('[Back]', 4, canvas.h - 9, '#888');
             return;
         }
 
         if (state === 'no-updates') {
-            canvas.drawText('No updates available', 4, y, '#ffa550');
-            canvas.drawText(currentCommit, 4, y + lineH + 2, '#f7c52f');
-            canvas.drawText('[Back]', 4, canvas.h - 9, '#f7c52f');
+            canvas.drawText('No updates available', 4, y, '#ffab3d');
+            canvas.drawText(currentCommit, 4, y + lineH + 2, '#888');
+            canvas.drawText('[Back]', 4, canvas.h - 9, '#888');
             return;
         }
 
         // state === 'available'
-        canvas.drawText(commits.length + ' new commit' + (commits.length !== 1 ? 's' : ''), 4, y, '#ffa550');
+        canvas.drawText(commits.length + ' new commit' + (commits.length !== 1 ? 's' : ''), 4, y, '#ffab3d');
         y += lineH + 2;
 
         // Commit list area
@@ -157,7 +157,7 @@ var UpdateScene = (function() {
             var text = commits[i];
             // Truncate to fit screen width (roughly 42 chars at 6px each)
             if (text.length > 42) text = text.substring(0, 40) + '..';
-            canvas.drawText(text, 4, y + (i - scrollOffset) * lineH, '#f7c52f');
+            canvas.drawText(text, 4, y + (i - scrollOffset) * lineH, '#888');
         }
 
         // Buttons at bottom
@@ -166,11 +166,11 @@ var UpdateScene = (function() {
         var cancelLabel = '[Cancel]';
 
         if (buttonIndex === 0) {
-            canvas.drawText(startLabel, 4, btnY, '#ffa550');
-            canvas.drawText(cancelLabel, 4 + startLabel.length * 6 + 12, btnY, '#f7c52f');
+            canvas.drawText(startLabel, 4, btnY, '#ffab3d');
+            canvas.drawText(cancelLabel, 4 + startLabel.length * 6 + 12, btnY, '#888');
         } else {
-            canvas.drawText(startLabel, 4, btnY, '#f7c52f');
-            canvas.drawText(cancelLabel, 4 + startLabel.length * 6 + 12, btnY, '#ffa550');
+            canvas.drawText(startLabel, 4, btnY, '#888');
+            canvas.drawText(cancelLabel, 4 + startLabel.length * 6 + 12, btnY, '#ffab3d');
         }
     };
 

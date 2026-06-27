@@ -19,7 +19,7 @@ var ResponsiveFrame = (function() {
         this.y = options.y !== undefined ? options.y : 0;
         this.width = options.width !== undefined ? options.width : 244;
         this.height = options.height !== undefined ? options.height : 22;
-        this.fillColor = options.fillColor || '#ffa550';
+        this.fillColor = options.fillColor || '#ffab3d';
         this.strokeColor = options.strokeColor || '#000000';
         this.showFill = options.showFill !== undefined ? options.showFill : true;
         this.showStroke = options.showStroke !== undefined ? options.showStroke : true;
@@ -112,17 +112,17 @@ var ResponsiveFrame = (function() {
 
 ResponsiveFrame.tweakables = [
     { section: 'position' },
-    { key: 'x',            type: 'range', min: 0, max: 1024, default: 6 },
-    { key: 'y',            type: 'range', min: 0, max: 600, default: 6 },
+    { key: 'x',            type: 'range', min: 0, max: 256, default: 6 },
+    { key: 'y',            type: 'range', min: 0, max: 144, default: 6 },
     { section: 'size' },
-    { key: 'width',        type: 'range', min: 1, max: 1024, default: 244 },
-    { key: 'height',       type: 'range', min: 1, max: 600, default: 22 },
+    { key: 'width',        type: 'range', min: 1, max: 256, default: 244 },
+    { key: 'height',       type: 'range', min: 1, max: 144, default: 22 },
     { section: 'anchor' },
     { key: 'anchorH',      type: 'enum', options: ['left', 'center', 'right'],  default: 'left', label: 'horizontal' },
     { key: 'anchorV',      type: 'enum', options: ['top', 'center', 'bottom'],  default: 'top',  label: 'vertical' },
     { section: 'fill' },
     { key: 'showFill',     type: 'bool',  default: true, label: 'show fill' },
-    { key: 'fillColor',    type: 'color', default: '#ffa550' },
+    { key: 'fillColor',    type: 'color', default: '#ffab3d' },
     { section: 'stroke' },
     { key: 'showStroke',   type: 'bool',  default: true, label: 'show stroke' },
     { key: 'strokeColor',  type: 'color', default: '#000000' },

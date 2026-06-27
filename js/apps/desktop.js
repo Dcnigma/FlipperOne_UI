@@ -373,7 +373,7 @@ var DesktopScene = (function() {
     }
 
     DesktopScene.prototype.render = function(canvas) {
-        canvas.clear('#ffa550');
+        canvas.clear('#ffab3d');
 
         // Status bar — same style as the Main Menu (default dark theme).
         UI.drawStatusBar(canvas, '');
@@ -411,9 +411,9 @@ var DesktopScene = (function() {
         // a middle rule between the current-target and hostname lines,
         // and the bottom at 62 px (shifted by hostnameShift when the
         // value wraps). 1 px tall, full canvas width, light gray.
-        canvas.drawRect(0, UI.STATUS_BAR_H + 34, canvas.w, 1, '#824704');
-        canvas.drawRect(0, midDividerY, canvas.w, 1, '#824704');
-        canvas.drawRect(0, UI.STATUS_BAR_H + 62 + hostnameShift, canvas.w, 1, '#824704');
+        canvas.drawRect(0, UI.STATUS_BAR_H + 34, canvas.w, 1, '#ccc');
+        canvas.drawRect(0, midDividerY, canvas.w, 1, '#ccc');
+        canvas.drawRect(0, UI.STATUS_BAR_H + 62 + hostnameShift, canvas.w, 1, '#ccc');
 
         // Current-target line — centered "Current target: <profile>"
         // (label gray, value black). Drawn only once the active

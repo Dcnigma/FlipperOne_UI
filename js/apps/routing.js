@@ -49,27 +49,27 @@ var RoutingScene = (function() {
         var lineH = 9;
 
         if (loading && !data) {
-            canvas.drawText('Loading...', 4, y, '#f7c52f');
+            canvas.drawText('Loading...', 4, y, '#888');
             return;
         }
         if (error && !data) {
-            canvas.drawText('Error', 4, y, '#f7c52f');
+            canvas.drawText('Error', 4, y, '#888');
             return;
         }
 
-        canvas.drawText('Default gateways:', 4, y, '#ffa550');
+        canvas.drawText('Default gateways:', 4, y, '#ffab3d');
         y += lineH + 2;
 
         if (!data || data.length === 0) {
-            canvas.drawText('No default routes', 4, y, '#f7c52f');
+            canvas.drawText('No default routes', 4, y, '#888');
             return;
         }
 
         for (var i = 0; i < data.length; i++) {
             var r = data[i];
-            canvas.drawText(r.family + ' via ' + r.dev, 4, y, '#f7c52f');
+            canvas.drawText(r.family + ' via ' + r.dev, 4, y, '#888');
             y += lineH;
-            canvas.drawText(' ' + r.gateway, 4, y, '#ffa550');
+            canvas.drawText(' ' + r.gateway, 4, y, '#ffab3d');
             y += lineH + 1;
         }
     };

@@ -1,11 +1,11 @@
 var UIDemoScene = (function() {
-    var FONT_H   = 24;
+    var FONT_H   = 11;
     var PAD_X    = 6;
     var PAD_Y    = 1;
     var RADIUS   = 2;
     var COLOR_DIM = '#EAEAEA';  // shade of white for unselected items
-    var ITEM_W   = 1024;  // Menu item width
-    var ITEM_H   = 600;   // Menu item height
+    var ITEM_W   = 240;  // Menu item width
+    var ITEM_H   = 20;   // Menu item height
 
     var STATE_DEFAULT  = 'default';
     var STATE_SELECTED = 'selected';
@@ -35,7 +35,7 @@ var UIDemoScene = (function() {
             // Draw gray separator line at the bottom (only for non-last items)
             // Line is 2px shorter on each side
             if (!this.isLast) {
-                canvas.drawHLine(x + 2, y + this.h - 1, this.w - 4, '#EDEDED');
+                canvas.drawHLine(x + 2, y + this.h - 1, this.w - 4, '#c48021');
             }
             textColor = '#000';
             iconColor = '#000';
@@ -47,8 +47,8 @@ var UIDemoScene = (function() {
         } else if (this.state === STATE_PRESSED) {
             // Rounded rectangle filled with black (1px higher to cover line above)
             canvas.drawRoundRect(x, y - 1, this.w, this.h + 1, RADIUS, '#000');
-            textColor = '#ffa550';
-            iconColor = '#ffa550';
+            textColor = '#ffab3d';
+            iconColor = '#ffab3d';
         }
 
         // Center text and icon vertically within the item height
@@ -79,9 +79,9 @@ var UIDemoScene = (function() {
 
     var ITEM_SPACING = 0;  // No spacing between items
     var ITEM_H_REGULAR = 19;  // Regular items height (with bottom line)
-    var ITEM_H_LAST = 28;     // Last item height (no line)
+    var ITEM_H_LAST = 18;     // Last item height (no line)
     var BTN_W   = 48;
-    var BTN_GAP = 1;  // 5 × 48 + 4 × 4 = 1024px exactly
+    var BTN_GAP = 2;  // 5 × 48 + 4 × 4 = 256px exactly
 
     function UIDemoScene(sceneManager) {
         this.sceneManager = sceneManager;
@@ -238,7 +238,7 @@ var UIDemoScene = (function() {
                                     // Adjust viewport to keep selected item visible
                                     var itemHeight = self.items[0] ? self.items[0].h + ITEM_SPACING : 19;
                                     var startY = 20;
-                                    var scrollableHeight = (600 - 14) - startY;
+                                    var scrollableHeight = (144 - 14) - startY;
                                     var visibleItems = Math.floor(scrollableHeight / itemHeight);
 
                                     if (self.selectedIndex < self.viewportStartIndex) {
@@ -571,7 +571,7 @@ var UIDemoScene = (function() {
             // Adjust viewport to keep selected item visible
             var itemHeight = this.items[0].h + ITEM_SPACING;
             var startY = 20;  // Must match render method's startY
-            var scrollableHeight = (600 - 14) - startY;  // Canvas height - button bar - header space
+            var scrollableHeight = (144 - 14) - startY;  // Canvas height - button bar - header space
             var visibleItems = Math.floor(scrollableHeight / itemHeight);
 
             if (this.selectedIndex < this.viewportStartIndex) {
@@ -592,7 +592,7 @@ var UIDemoScene = (function() {
     };
 
     UIDemoScene.prototype.render = function(canvas) {
-        canvas.clear('#ffa550');
+        canvas.clear('#ffab3d');
 
         // Draw header (centered)
         var headerText = 'FlipperOS Boot profiles | U-BOOT';

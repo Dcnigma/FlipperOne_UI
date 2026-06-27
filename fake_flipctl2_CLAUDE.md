@@ -675,10 +675,10 @@ Wiring a new font into a scene:
 |---------|-------|-------|
 | Background | `#ffa550` | Main canvas fill |
 | Text/Borders | `#000` | Primary text, frames, icons |
-| Dividers | `#EDEDED` | Menu item separator lines |
+| Dividers | `#c48021` | Menu item separator lines |
 | Unselected | `#EAEAEA` | Dim state, accents |
 | Overlay | `rgba(255, 255, 255, 0.75)` | Modal dialogs, keyboards |
-| Disabled | `#CCC` | Disabled text, buttons |
+| Disabled | `#ccc` | Disabled text, buttons |
 
 ## Visual Design System
 
@@ -737,7 +737,7 @@ All interactive components expose four possible states: `default`, `selected`, `
 |-------|------------|-------------------|--------|
 | `default` | `#ffa550` | `#000` | 1px `#000`, top corners rounded at r=4 (middle: both; left: top-right only; right: top-left only — outer edges run flush to the screen) |
 | `pressed` | `#000` | `#ffa550` | Same border pattern |
-| `disabled` | `#CCC` | `#999` | Same border pattern |
+| `disabled` | `#ccc` | `#c48021` | Same border pattern |
 
 **PopupMenuLeft items** (`js/ui.js`):
 
@@ -750,7 +750,7 @@ All interactive components expose four possible states: `default`, `selected`, `
 **Rule of thumb for state styling** — the pattern is consistent across components:
 - **Selection** = outline only (`drawRoundFrame`)
 - **Press** = filled black + inverted text/icon (`drawRoundRect` + `#ffa550` foreground)
-- **Disabled** = `#CCC` background, `#999` text
+- **Disabled** = `#ccc` background, `#c48021` text
 
 ### Icon Sizing Conventions
 
@@ -787,7 +787,7 @@ Horizontal margins: **8px** on left/right for centered content (giving 240px usa
 
 - Everything renders on pixel boundaries — no antialiasing, no fractional coordinates.
 - Black-on-white is the default; inversion (white-on-black) only for pressed/confirmed state.
-- Dividers are never black — they're always `#EDEDED` so they sit quietly behind content.
+- Dividers are never black — they're always `#c48021` so they sit quietly behind content.
 - Selection never fills — always an outline. Filling is reserved for commit/press.
 - Any rounded shape uses `r ∈ {2, 3, 4}` — no arbitrary radii.
 
@@ -1046,7 +1046,7 @@ beyond the viewport."
 - **States & colors** (see [Component State Styling](#component-state-styling) for the full table):
   - `default` — bg `#ffa550`, text `#000`, 1px `#000` border
   - `pressed` — bg `#000`, text `#ffa550`, same border
-  - `disabled` — bg `#CCC`, text `#999`, same border
+  - `disabled` — bg `#ccc`, text `#c48021`, same border
 - **Properties**: `text`, `action` (`'ok'`, `'run'`, `'esc'`, etc.), `onPress` callback
 - **Render**: `btn.render(canvas)`
 
@@ -1939,7 +1939,7 @@ space and clips to the inner content rect.
 | `kv` | 12 px | `Label:` (gray `#6D6D6D`) + value (black) on one line |
 | `sub` | 12 px | Section label `IPv4:` / `IPv6:` / `DNS:` (gray) — only emitted when the section has 2+ entries |
 | `value` | 12 px | Indented (8 px) array entry under the most recent `sub` |
-| `divider` | 4 px | 1 px `#E5E5E5` rule centred in a 4-px band, separates blocks |
+| `divider` | 4 px | 1 px `#613708` rule centred in a 4-px band, separates blocks |
 
 ### Inline-vs-list collapse
 
@@ -2974,7 +2974,7 @@ Title bar carries:
 Reusable settings row used by every line in the Internet Radio body. Two
 visual modes share the same shell — title on the left (HaxrcorpFont16,
 black, 6 px from canvas edge), 180 × 11 chip on the right (5 px from
-canvas right edge, 3 px corner radius, `#E5E5E5` fill).
+canvas right edge, 3 px corner radius, `#613708` fill).
 
 ### Plain mode (City / Station / Audio device)
 
@@ -3015,7 +3015,7 @@ MenuDropdownLine.HEIGHT       // 14 px (TOP_PAD 3 + CHIP_H 11)
 MenuDropdownLine.TOP_PAD      // 3
 MenuDropdownLine.CHIP_HEIGHT  // 11
 MenuDropdownLine.CHIP_WIDTH   // 180
-MenuDropdownLine.CHIP_FILL    // '#E5E5E5'
+MenuDropdownLine.CHIP_FILL    // '#613708'
 ```
 
 Exposed so caller scenes can stack rows without re-deriving the math.
@@ -3063,7 +3063,7 @@ anchored at the chip's top-left. Spec:
   between items + 2 px borders). 3 items = 43 px.
 - **Wash**: `rgba(255, 255, 255, 0.75)` over the whole canvas — every
   other element fades out, the dropdown is the only crisp UI.
-- **Body**: `ResponsiveFrame`, 3 px corner radius, `#E5E5E5` fill,
+- **Body**: `ResponsiveFrame`, 3 px corner radius, `#613708` fill,
   **no stroke** (matches the chip's strokeless silhouette so the
   dropdown reads as the chip "growing downward").
 - **Items**: `HaxrcorpFont16` black, centered horizontally; 1 px

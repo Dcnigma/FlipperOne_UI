@@ -17,7 +17,7 @@ var BootMenuScene = (function() {
     var CONTAINER_W   = 224;
     var HEADER_Y      = 5;     // U-BOOT header baseline
     var CONTAINER_Y   = 20;    // first row top (below the header)
-    var DIVIDER_COLOR = '#824704';
+    var DIVIDER_COLOR = '#ccc';
 
     var SELECTOR_X             = 4;
     var SELECTOR_W_WITH_SCROLL = 244;
@@ -443,7 +443,7 @@ var BootMenuScene = (function() {
     };
 
     BootMenuScene.prototype.render = function(canvas) {
-        canvas.clear('#ffa550');
+        canvas.clear('#ffab3d');
 
         // U-BOOT header (centred), kept from the demo.
         var headerText  = 'FlipperOS Boot profiles | U-BOOT';
@@ -544,7 +544,7 @@ var BootMenuScene = (function() {
         new ResponsiveFrame({
             x: boxX, y: boxY, width: boxW, height: boxH,
             anchorH: 'left', anchorV: 'top',
-            fillColor: '#ffa550', strokeColor: '#000',
+            fillColor: '#ffab3d', strokeColor: '#000',
             showFill: true, showStroke: true, cornerRadius: 5
         }).render(canvas);
 
@@ -594,7 +594,7 @@ var BootMenuScene = (function() {
         new ResponsiveFrame({
             x: modalX, y: modalY, width: modalW, height: modalH,
             anchorH: 'left', anchorV: 'top',
-            fillColor: '#ffa550', strokeColor: '#000',
+            fillColor: '#ffab3d', strokeColor: '#000',
             showFill: true, showStroke: true, cornerRadius: 5
         }).render(canvas);
 

@@ -80,7 +80,7 @@ var TVMediaKeyboard = (function() {
     var TOUCHPAD_ANIM_MS = 200;
     // PTT-indicator x positions for each touchpad state. The PTT glyph
     // slides between PTT_X_*; the direction arrow fades in by opacity.
-    var PTT_X_FLIPPER   = 600;  // pad on Flipper (forwarding off)
+    var PTT_X_FLIPPER   = 144;  // pad on Flipper (forwarding off)
     var PTT_X_TV        = 112;  // pad on TV (forwarding on)
     var ARROW_X_FLIPPER = 160;  // right arrow (points to the TV)
     var ARROW_X_TV      = 103;  // left arrow (points to the Flipper)
@@ -277,8 +277,8 @@ var TVMediaKeyboard = (function() {
         var TAB_BTN_W = 48;
         var TAB_BTN_H = 14;
         var TAB_BTN_X = 52;
-        var SCREEN_W  = 1024;
-        var SCREEN_H  = 600;
+        var SCREEN_W  = 256;
+        var SCREEN_H  = 144;
         var tabBtnY   = SCREEN_H - 2 - TAB_BTN_H;
         var BACKSPACE_BTN_X = SCREEN_W - 52 - TAB_BTN_W;
         this._123Btn       = new UI.NumericTabButton('123', TAB_BTN_X, tabBtnY, TAB_BTN_W, 'edit', function() { self._toggleLayout(); });
@@ -420,7 +420,7 @@ var TVMediaKeyboard = (function() {
                     var g = px[i];
                     if (g >= 63) continue;                 // white = transparent bg
                     if (g > TOUCHPAD_OUTLINE_MAX) {
-                        ctx.fillStyle = '#ffa550';            // gray shadow → white
+                        ctx.fillStyle = '#ffab3d';            // gray shadow → white
                     } else {
                         var lvl = Math.round((g / 63) * 255);  // outline: keep dark/AA
                         ctx.fillStyle = 'rgb(' + lvl + ',' + lvl + ',' + lvl + ')';
@@ -708,7 +708,7 @@ var TVMediaKeyboard = (function() {
             x: X, y: Y, width: W, height: H,
             anchorH: 'left', anchorV: 'top',
             strokeColor: '#000', showStroke: true,
-            fillColor:   '#ffa550', showFill:   true,
+            fillColor:   '#ffab3d', showFill:   true,
             cornerRadius: 4,
             corners: { tl: true, tr: true, bl: true, br: true }
         }).render(canvas);
@@ -729,7 +729,7 @@ var TVMediaKeyboard = (function() {
         var body = "Your text won't be saved.";
         var bodyW = HaxrcorpFont16.textWidth(body);
         HaxrcorpFont16.draw(ctx, body,
-            X + Math.floor((W - bodyW) / 2), bodyY, '#faa134');
+            X + Math.floor((W - bodyW) / 2), bodyY, '#666');
 
         this._drawDiscardModalButton(canvas, BTN_X, btn1Y, BTN_W, BTN_H,
             'Keep',    m.buttonIndex === 0);
@@ -1099,7 +1099,7 @@ var TVMediaKeyboard = (function() {
 
     TVMediaKeyboard.prototype.render = function(canvas) {
         var ctx = canvas.ctx;
-        canvas.clear('#ffa550');
+        canvas.clear('#ffab3d');
 
         // Status bar (kept on top — modal frame sits below it).
         UI.drawStatusBar(canvas, '');

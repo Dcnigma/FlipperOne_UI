@@ -5,7 +5,7 @@ var MenuScene = (function() {
     var CONTAINER_X = 5;
     var CONTAINER_Y = UI.STATUS_BAR_H + 12;    // 25 for the default 13px status bar
     var CONTAINER_W = 224;
-    var DIVIDER_COLOR = '#824704';
+    var DIVIDER_COLOR = '#ed9b2f';
     var ANIMATED_ICON_FRAME_MS = 200;
 
     // Viewport: the menu area fits 5 lines (5*20 + 4 dividers = 104px).
@@ -85,7 +85,7 @@ var MenuScene = (function() {
                     width: FRAME_W, height: FRAME_H,
                     anchorH: 'left', anchorV: 'top',
                     strokeColor: '#000', showStroke: true,
-                    fillColor: '#ffa550', showFill: true,
+                    fillColor: '#ffab3d', showFill: true,
                     cornerRadius: 3
                 });
                 frame.render(canvas);
@@ -509,7 +509,7 @@ var MenuScene = (function() {
     };
 
     MenuScene.prototype.render = function(canvas) {
-        canvas.clear('#ffa550');
+        canvas.clear('#ffab3d');
         UI.drawStatusBar(canvas, '');
 
         // Selector width tracks scrollbar visibility; the gray divider

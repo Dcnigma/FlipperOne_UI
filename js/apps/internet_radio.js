@@ -891,13 +891,13 @@ var InternetRadioScene = (function() {
     };
 
     InternetRadioScene.prototype.render = function(canvas) {
-        canvas.clear('#ffa550');
+        canvas.clear('#ffab3d');
         // Standard status bar across the top — battery / wifi /
         // etc. stay visible on this scene.
         UI.drawStatusBar(canvas, '');
 
         // ── Title header ─────────────────────────────────────
-        // Full-width, 16 px tall, #754f1c fill, anchored
+        // Full-width, 16 px tall, #D9D9D9 fill, anchored
         // immediately below the status bar (no gap). Carries
         // the app's name in Born2bSportyV2Medium — bigger /
         // chunkier than the standard HaxrcorpFont16 the rest
@@ -906,7 +906,7 @@ var InternetRadioScene = (function() {
         var ctx     = canvas.ctx;
         var TITLE_H = 16;
         var TITLE_Y = UI.STATUS_BAR_H;             // flush against the status bar
-        ctx.fillStyle = '#754f1c';
+        ctx.fillStyle = '#D9D9D9';
         ctx.fillRect(0, TITLE_Y, canvas.w, TITLE_H);
 
         // Static radio glyph — frame 0 of the animated strip,
@@ -1003,7 +1003,7 @@ var InternetRadioScene = (function() {
             DIVIDER_PAD_X,
             dividerY,
             canvas.w - DIVIDER_PAD_X * 2,
-            '#824704');
+            '#ccc');
 
         // Selector outline — 16 px tall, flush with the row's
         // top y. Suppressed while the dropdown is open — the
@@ -1151,7 +1151,7 @@ var InternetRadioScene = (function() {
             // Divider between items (not after the last).
             if (i < n - 1) {
                 canvas.drawHLine(chipX + 1, itemY + ITEM_H,
-                    W - 2, '#eda74c');
+                    W - 2, '#c48021');
             }
         }
 
@@ -1217,7 +1217,7 @@ var InternetRadioScene = (function() {
         }
     };
 
-    // Modal geometry — centred 150×70 frame on the 1024×600
+    // Modal geometry — centred 150×70 frame on the 256×144
     // canvas. Vertical layout fixed at construction so each
     // state ('missing' / 'installing' / 'failed') anchors
     // against the same coordinates and the modal doesn't
@@ -1252,7 +1252,7 @@ var InternetRadioScene = (function() {
             x: X, y: Y, width: W, height: H,
             anchorH: 'left', anchorV: 'top',
             strokeColor: '#000', showStroke: true,
-            fillColor:   '#ffa550', showFill:   true,
+            fillColor:   '#ffab3d', showFill:   true,
             cornerRadius: 4,
             corners: { tl: true, tr: true, bl: true, br: true }
         });
@@ -1298,7 +1298,7 @@ var InternetRadioScene = (function() {
 
         if (m.state === 'missing') {
             centerSporty('Install mpg123?', titleY);
-            centerHaxrcorp('MP3 decoder for radio streaming', bodyY, '#faa134');
+            centerHaxrcorp('MP3 decoder for radio streaming', bodyY, '#666');
             this._drawStackedButton(canvas, BTN_X, btn1Y, BTN_W, BTN_H, 'Install', m.buttonIndex === 0);
             this._drawStackedButton(canvas, BTN_X, btn2Y, BTN_W, BTN_H, 'Cancel',  m.buttonIndex === 1);
             return;
@@ -1317,7 +1317,7 @@ var InternetRadioScene = (function() {
             if (t) { lastLine = t; break; }
         }
         if (lastLine.length > 28) lastLine = lastLine.slice(0, 26) + '..';
-        centerHaxrcorp(lastLine, bodyY, '#faa134');
+        centerHaxrcorp(lastLine, bodyY, '#666');
         this._drawStackedButton(canvas, BTN_X, btn1Y, BTN_W, BTN_H, 'Retry',  m.buttonIndex === 0);
         this._drawStackedButton(canvas, BTN_X, btn2Y, BTN_W, BTN_H, 'Cancel', m.buttonIndex === 1);
     };
@@ -1428,7 +1428,7 @@ var InternetRadioScene = (function() {
             x: X, y: Y, width: W, height: H,
             anchorH: 'left', anchorV: 'top',
             strokeColor: '#000', showStroke: true,
-            fillColor:   '#ffa550', showFill:   true,
+            fillColor:   '#ffab3d', showFill:   true,
             cornerRadius: 4,
             corners: { tl: true, tr: true, bl: true, br: true }
         });
@@ -1456,7 +1456,7 @@ var InternetRadioScene = (function() {
         var body = m.station ? ('Could not start ' + m.station)
                              : 'Could not start stream';
         if (body.length > 28) body = body.slice(0, 26) + '..';
-        centerHaxrcorp(body, bodyY, '#faa134');
+        centerHaxrcorp(body, bodyY, '#666');
         this._drawStackedButton(canvas, BTN_X, btnY, BTN_W, BTN_H, 'OK', true);
     };
 

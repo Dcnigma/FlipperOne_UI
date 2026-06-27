@@ -265,7 +265,7 @@ var NetworkLedsScene = (function() {
 
     NetworkLedsScene.prototype.render = function(canvas) {
         var ctx = canvas.ctx;
-        canvas.clear('#ffa550');
+        canvas.clear('#ffab3d');
         UI.drawStatusBar(canvas, '');
 
         // ── Layout (width is adaptive) ─────────────────────────
@@ -320,7 +320,7 @@ var NetworkLedsScene = (function() {
         // sides; clamp so it never overflows the canvas.
         var frameW = contentW + INNER_PAD_L + INNER_PAD_R;
         if (frameW > 252) frameW = 252;
-        var frameX = Math.floor((1024 - frameW) / 2);
+        var frameX = Math.floor((256 - frameW) / 2);
 
         // Now lay each field's x relative to the frame's inner
         // left edge.
@@ -336,7 +336,7 @@ var NetworkLedsScene = (function() {
             width: frameW, height: FRAME_H,
             anchorH: 'left', anchorV: 'top',
             strokeColor: '#000', showStroke: true,
-            fillColor: '#ffa550', showFill: true,
+            fillColor: '#ffab3d', showFill: true,
             cornerRadius: FRAME_R,
             corners: { tl: true, tr: true, bl: true, br: true }
         });
@@ -354,7 +354,7 @@ var NetworkLedsScene = (function() {
             var prev = fields[gi - 1];
             var prevRight = prev.x + prev.w;
             var divX = Math.floor((prevRight + fields[gi].x) / 2);
-            canvas.drawVLine(divX, FRAME_Y + 2, FRAME_H - 4, '#824704');
+            canvas.drawVLine(divX, FRAME_Y + 2, FRAME_H - 4, '#ed9b2f');
         }
 
         // ── Selection highlight (under the text) ──────────────
@@ -412,7 +412,7 @@ var NetworkLedsScene = (function() {
         var textY = FRAME_Y + 4;
         for (var fj = 0; fj < fields.length; fj++) {
             var f  = fields[fj];
-            var fg = (fj === this._fieldIdx) ? '#ffa550' : '#000';
+            var fg = (fj === this._fieldIdx) ? '#ffab3d' : '#000';
             if (f.font === 'born2b') {
                 Born2bSportyV2Medium.draw(ctx, f.text,
                     f.x, FRAME_Y + 1 + (f.dy || 0), fg);

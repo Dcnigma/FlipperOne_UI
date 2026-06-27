@@ -12,7 +12,7 @@
  * can be stacked freely below an app title bar):
  *
  *   ┌──────────────────────────────────────────────────────────┐
- *   │ <title text>                       ┌─ #E5E5E5 chip ──┐  │
+ *   │ <title text>                       ┌─ #613708 chip ──┐  │
  *   │                                    │ <future content> │  │
  *   │                                    └──────────────────┘  │
  *   └──────────────────────────────────────────────────────────┘
@@ -37,7 +37,7 @@ var MenuDropdownLine = (function() {
     var CHIP_W         = 180;
     var CHIP_H         = 11;
     var CHIP_RIGHT_PAD = 5;     // px from the screen's right edge
-    var CHIP_FILL      = '#E5E5E5';
+    var CHIP_FILL      = '#613708';
     var TITLE_FG       = '#000';
 
     function MenuDropdownLine(options) {
@@ -229,7 +229,7 @@ var MenuDropdownLine = (function() {
                 ctx.beginPath();
                 ctx.rect(chipX, chipY, filledW, CHIP_H);
                 ctx.clip();
-                HaxrcorpFont16.draw(ctx, text, x, y, '#ffa550');
+                HaxrcorpFont16.draw(ctx, text, x, y, '#ffab3d');
                 ctx.restore();
             }
             if (filledW < CHIP_W) {

@@ -54,7 +54,7 @@ var Modem5gScene = (function() {
             var h = heights[i];
             var by = baseY - h;
             if (i < bars) {
-                canvas.drawRect(bx, by, 3, h, '#ffa550');
+                canvas.drawRect(bx, by, 3, h, '#ffab3d');
             } else {
                 canvas.drawFrame(bx, by, 3, h, '#555');
             }
@@ -89,14 +89,14 @@ var Modem5gScene = (function() {
         var lh = 10;
 
         if (loading && !data) {
-            canvas.drawText('Loading...', 4, y, '#f7c52f');
-            canvas.drawText('[Back]', 4, canvas.h - 9, '#f7c52f');
+            canvas.drawText('Loading...', 4, y, '#888');
+            canvas.drawText('[Back]', 4, canvas.h - 9, '#888');
             return;
         }
 
         if ((error && !data) || !data || !data.available) {
-            canvas.drawText('Modem not available', 4, y, '#f7c52f');
-            canvas.drawText('[Back]', 4, canvas.h - 9, '#f7c52f');
+            canvas.drawText('Modem not available', 4, y, '#888');
+            canvas.drawText('[Back]', 4, canvas.h - 9, '#888');
             return;
         }
 
@@ -105,11 +105,11 @@ var Modem5gScene = (function() {
         drawSignalIcon(canvas, 4, y, bars);
 
         var operator = data.operator || 'Unknown';
-        canvas.drawText(operator, 26, y + 3, '#ffa550');
+        canvas.drawText(operator, 26, y + 3, '#ffab3d');
 
         var tech = techLabel(data.accessTech);
         var techW = canvas.textWidth(tech);
-        canvas.drawText(tech, canvas.w - 4 - techW, y + 3, '#ffa550');
+        canvas.drawText(tech, canvas.w - 4 - techW, y + 3, '#ffab3d');
 
         y += 16;
 
@@ -117,7 +117,7 @@ var Modem5gScene = (function() {
         var sigStr = data.signalQuality !== null ? data.signalQuality + '%' : '--%';
         var sigLine = 'Signal: ' + sigStr;
         if (data.rsrp) sigLine += '  RSRP:' + data.rsrp;
-        canvas.drawText(sigLine, 4, y, '#ffa550');
+        canvas.drawText(sigLine, 4, y, '#ffab3d');
         y += lh;
 
         // Separator
@@ -127,20 +127,20 @@ var Modem5gScene = (function() {
         // Row 3: TAC + Cell ID
         var tac = data.tac || '--';
         var cid = data.cellId || '--';
-        canvas.drawText('TAC:' + tac + ' CID:' + cid, 4, y, '#ffa550');
+        canvas.drawText('TAC:' + tac + ' CID:' + cid, 4, y, '#ffab3d');
         y += lh;
 
         // Row 4: PLMN + PCI
         var plmn = (data.mcc && data.mnc) ? data.mcc + '/' + data.mnc : '--';
         var pci = data.pci ? data.pci : '--';
-        canvas.drawText('PLMN:' + plmn + ' PCI:' + pci, 4, y, '#ffa550');
+        canvas.drawText('PLMN:' + plmn + ' PCI:' + pci, 4, y, '#ffab3d');
         y += lh;
 
         // Row 5: Band/EARFCN
         if (data.band) {
-            canvas.drawText(data.band, 4, y, '#f7c52f');
+            canvas.drawText(data.band, 4, y, '#888');
         } else if (data.earfcn) {
-            canvas.drawText('EARFCN:' + data.earfcn, 4, y, '#f7c52f');
+            canvas.drawText('EARFCN:' + data.earfcn, 4, y, '#888');
         }
         y += lh;
 
@@ -149,20 +149,20 @@ var Modem5gScene = (function() {
         y += 4;
 
         // Row 6: Modem model
-        canvas.drawText(data.model || '--', 4, y, '#ffa550');
+        canvas.drawText(data.model || '--', 4, y, '#ffab3d');
         y += lh;
 
         // Row 7: IP
         var ip = data.ip4 || '--';
-        canvas.drawText('IP: ' + ip, 4, y, '#ffa550');
+        canvas.drawText('IP: ' + ip, 4, y, '#ffab3d');
         y += lh;
 
         // Row 8: Bandwidth
         var dl = data.dlMbps !== null ? data.dlMbps + ' Mbit/s' : '-- Mbit/s';
         var ul = data.ulMbps !== null ? data.ulMbps + ' Mbit/s' : '-- Mbit/s';
-        canvas.drawText('DL:' + dl + ' UL:' + ul, 4, y, '#ffa550');
+        canvas.drawText('DL:' + dl + ' UL:' + ul, 4, y, '#ffab3d');
 
-        canvas.drawText('[Back]', 4, canvas.h - 9, '#f7c52f');
+        canvas.drawText('[Back]', 4, canvas.h - 9, '#888');
     };
 
     return Modem5gScene;

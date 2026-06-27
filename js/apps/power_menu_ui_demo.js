@@ -69,7 +69,7 @@ var PowerMenuUIDemoScene = (function() {
         // x offsets:
         //   Help     → x = 52   (52 px from the screen's left)
         //   Power    → x = 104
-        //   Settings → x = 156  (right edge at 204 = 1024 − 52,
+        //   Settings → x = 156  (right edge at 204 = 256 − 52,
         //              i.e. 52 px from the screen's right)
         // Evenly spaced 52 px apart. Each binds to an action
         // key; onPress is a no-op for now (UI demo only):
@@ -500,7 +500,7 @@ var PowerMenuUIDemoScene = (function() {
     };
 
     PowerMenuUIDemoScene.prototype.render = function(canvas) {
-        canvas.clear('#ffa550');
+        canvas.clear('#ffab3d');
 
         // ── Linux-mode screen ────────────────────────────────────
         // Empty body with the standard (black) status bar, and a
@@ -526,7 +526,7 @@ var PowerMenuUIDemoScene = (function() {
 
         // Sleep face — 50×31 grayscale icon. Left edge 113 px from
         // the screen's left; bottom edge 64 px from the screen's
-        // bottom, so the top-left lands at (113, 600 − 64 − 31 = 49).
+        // bottom, so the top-left lands at (113, 144 − 64 − 31 = 49).
         if (typeof Icons !== 'undefined' && Icons.sleep_small_face) {
             canvas.drawSprite(Icons.sleep_small_face, 113,
                 canvas.h - 64 - Icons.sleep_small_face.h, '#000');
@@ -560,9 +560,9 @@ var PowerMenuUIDemoScene = (function() {
     };
 
     // Help overlay panel — 240×106, black stroke / white fill,
-    // 4 px corners. Horizontally centred (x = (1024−240)/2 = 8);
+    // 4 px corners. Horizontally centred (x = (256−240)/2 = 8);
     // its bottom edge sits 18 px above the screen's bottom edge
-    // (panel bottom = 600 − 18 = 126 → panel top = 126 − 106 = 20).
+    // (panel bottom = 144 − 18 = 126 → panel top = 126 − 106 = 20).
     PowerMenuUIDemoScene.prototype._renderHelpOverlay = function(canvas) {
         var W = 240, H = 106;
         var x = Math.floor((canvas.w - W) / 2);   // 8
@@ -597,14 +597,14 @@ var PowerMenuUIDemoScene = (function() {
         // (the part above the panel's top edge, y = 1 .. panel top).
         var ttX = x + 6;
         var ttY = 1 + Math.floor(((y - 1) - 9) / 2);   // centre 9px glyph in the strip
-        HaxrcorpFont16.draw(canvas.ctx, tabTitle, ttX, ttY, '#ffa550');
+        HaxrcorpFont16.draw(canvas.ctx, tabTitle, ttX, ttY, '#ffab3d');
 
         // Panel frame on top.
         new ResponsiveFrame({
             x: x,           y: y,
             width: W,       height: H,
             anchorH: 'left',  anchorV: 'top',
-            fillColor:   '#ffa550',
+            fillColor:   '#ffab3d',
             strokeColor: '#000',
             showFill:    true,
             showStroke:  true,
@@ -709,7 +709,7 @@ var PowerMenuUIDemoScene = (function() {
             x: modalX,       y: modalY,
             width: modalW,   height: modalH,
             anchorH: 'left',  anchorV: 'top',
-            fillColor:   '#ffa550',
+            fillColor:   '#ffab3d',
             strokeColor: '#000',
             showFill:    true,
             showStroke:  true,

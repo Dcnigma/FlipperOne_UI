@@ -18,7 +18,7 @@ var VoiceRecorderFilesScene = (function() {
     // difference is the header: a gray title bar instead of a
     // "> Title" breadcrumb, matching how the parent
     // VoiceRecorderScene chrome reads.
-    var TITLE_FILL    = '#754f1c';
+    var TITLE_FILL    = '#D9D9D9';
     var TITLE_H       = 16;
     var ICON_X        = 2;
     var TITLE_TEXT_X  = 18;
@@ -26,12 +26,12 @@ var VoiceRecorderFilesScene = (function() {
 
     var CONTAINER_X   = 5;
     var CONTAINER_W   = 224;
-    var DIVIDER_COLOR = '#824704';
+    var DIVIDER_COLOR = '#ccc';
 
     // 4 visible rows — leaves headroom above the bottom button
     // strip. At MenuLine.H = 20 + 1 px divider, four rows take
     // 83 px; with the title bar (32 px) and button strip
-    // (14 px) the canvas (600 px) has 15 px of breathing room.
+    // (14 px) the canvas (144 px) has 15 px of breathing room.
     var VISIBLE_COUNT = 4;
 
     var SELECTOR_X = 4;
@@ -58,7 +58,7 @@ var VoiceRecorderFilesScene = (function() {
     // Total vertical area taken by [breadcrumb text] + [gap before list].
     var LIST_TOP_PAD        = BREADCRUMB_HEIGHT + BREADCRUMB_GAP;         // 13
     var SCROLLBAR_Y         = UI.STATUS_BAR_H + TITLE_H + LIST_TOP_PAD;   // 42
-    var SCROLLBAR_H         = 600 - 14 - SCROLLBAR_Y - 1;                  // 87 (canvas.h - btn strip - 1)
+    var SCROLLBAR_H         = 144 - 14 - SCROLLBAR_Y - 1;                  // 87 (canvas.h - btn strip - 1)
     var SCROLLBAR_THUMB_PAD = 1;
 
     function VoiceRecorderFilesScene(sceneManager, folderName) {
@@ -148,7 +148,7 @@ var VoiceRecorderFilesScene = (function() {
                 var meta = (self.fileMeta && self.fileMeta[picked.text]) || {};
                 self._openPlayer(picked.text, meta.durationMs || 0);
             },
-            1024);
+            256);
 
         // Info modal — same shape the recorder uses for the
         // Folder row's "File manager: TBA" stub. Single title,
@@ -301,7 +301,7 @@ var VoiceRecorderFilesScene = (function() {
             x: X, y: Y, width: W, height: H,
             anchorH: 'left', anchorV: 'top',
             strokeColor: '#000', showStroke: true,
-            fillColor:   '#ffa550', showFill:   true,
+            fillColor:   '#ffab3d', showFill:   true,
             cornerRadius: 4,
             corners: { tl: true, tr: true, bl: true, br: true }
         }).render(canvas);
@@ -320,7 +320,7 @@ var VoiceRecorderFilesScene = (function() {
         var okW = HaxrcorpFont16.textWidth(okStr);
         HaxrcorpFont16.draw(ctx, okStr,
             BTN_X + Math.floor((BTN_W - okW) / 2),
-            btnY + Math.floor((BTN_H - 11) / 2), '#ffa550');
+            btnY + Math.floor((BTN_H - 11) / 2), '#ffab3d');
     };
 
     // Layout constants shared by both Edit modal and Sort
@@ -462,7 +462,7 @@ var VoiceRecorderFilesScene = (function() {
             x: X, y: Y, width: W, height: H,
             anchorH: 'left', anchorV: 'top',
             strokeColor: '#000', showStroke: true,
-            fillColor:   '#ffa550', showFill:   true,
+            fillColor:   '#ffab3d', showFill:   true,
             cornerRadius: 4,
             corners: { tl: true, tr: true, bl: true, br: true }
         }).render(canvas);
@@ -475,7 +475,7 @@ var VoiceRecorderFilesScene = (function() {
         // always fits without truncation.
         var fnY = Y + TOP_PAD + TITLE_H;
         HaxrcorpFont16.draw(ctx, fname,
-            X + Math.floor((W - fnW) / 2), fnY + 2, '#faa134');
+            X + Math.floor((W - fnW) / 2), fnY + 2, '#666');
         // Stacked buttons — Cancel on top (safe default),
         // Delete below.
         var BTN_W = W - 16;
@@ -853,7 +853,7 @@ var VoiceRecorderFilesScene = (function() {
             width: REC_W, height: REC_H,
             anchorH: 'left', anchorV: 'top',
             showStroke: true,  strokeColor: '#000000',
-            showFill:   true,  fillColor:   '#ffa550',
+            showFill:   true,  fillColor:   '#ffab3d',
             cornerRadius: 4,
             corners: { tl: true, tr: true, bl: true, br: true }
         }).render(canvas);
@@ -879,7 +879,7 @@ var VoiceRecorderFilesScene = (function() {
             width: PROG_W, height: PROG_H,
             anchorH: 'left', anchorV: 'top',
             showStroke: false,
-            showFill:   true, fillColor: '#754f1c',
+            showFill:   true, fillColor: '#D9D9D9',
             cornerRadius: 2,
             corners: { tl: true, tr: true, bl: true, br: true }
         }).render(canvas);
@@ -934,7 +934,7 @@ var VoiceRecorderFilesScene = (function() {
                 '< -' + p.seekFlash.step + 's',
                 midX, BOT_Y, '#000');
         } else {
-            HaxrcorpFont16.draw(ctx, '<', midX, BOT_Y, '#999');
+            HaxrcorpFont16.draw(ctx, '<', midX, BOT_Y, '#c48021');
         }
         var iconX = midX + leftWorstW + GAP;
         if (p.playing) {
@@ -952,7 +952,7 @@ var VoiceRecorderFilesScene = (function() {
                 rightAnchor, BOT_Y, '#000');
         } else {
             HaxrcorpFont16.draw(ctx, '>',
-                rightAnchor + rightWorstW - gtW, BOT_Y, '#999');
+                rightAnchor + rightWorstW - gtW, BOT_Y, '#c48021');
         }
 
         // Volume widget — vertical bar sitting in the 24-px
@@ -971,7 +971,7 @@ var VoiceRecorderFilesScene = (function() {
             width: VOL_W, height: VOL_H,
             anchorH: 'left', anchorV: 'top',
             showStroke: true,  strokeColor: '#000',
-            showFill:   true,  fillColor:   '#ffa550',
+            showFill:   true,  fillColor:   '#ffab3d',
             cornerRadius: 4,
             corners: { tl: true, tr: true, bl: true, br: true }
         }).render(canvas);
@@ -1113,7 +1113,7 @@ var VoiceRecorderFilesScene = (function() {
             x: X, y: Y, width: W, height: H,
             anchorH: 'left', anchorV: 'top',
             strokeColor: '#000', showStroke: true,
-            fillColor:   '#ffa550', showFill:   true,
+            fillColor:   '#ffab3d', showFill:   true,
             cornerRadius: 4,
             corners: { tl: true, tr: true, bl: true, br: true }
         }).render(canvas);
@@ -1295,7 +1295,7 @@ var VoiceRecorderFilesScene = (function() {
             if (i === m.selectedIndex) selectedItemY = itemY;
             if (i < n - 1) {
                 canvas.drawHLine(bodyX + 1, itemY + ITEM_H,
-                    W - 2, '#eda74c');
+                    W - 2, '#c48021');
             }
         }
         // Selector outline around the highlighted item. Inset
@@ -1662,7 +1662,7 @@ var VoiceRecorderFilesScene = (function() {
     };
 
     VoiceRecorderFilesScene.prototype.render = function(canvas) {
-        canvas.clear('#ffa550');
+        canvas.clear('#ffab3d');
         if (typeof UI !== 'undefined' && typeof UI.drawStatusBar === 'function') {
             UI.drawStatusBar(canvas, '');
         }
@@ -1698,7 +1698,7 @@ var VoiceRecorderFilesScene = (function() {
             crumbStr = '…' + stripped;
         }
         HaxrcorpFont16.draw(ctx, crumbStr,
-            BREADCRUMB_X, BREADCRUMB_Y, '#eda74c');
+            BREADCRUMB_X, BREADCRUMB_Y, '#c48021');
 
         // Empty state.
         if (this.items.length === 0) {
@@ -1706,7 +1706,7 @@ var VoiceRecorderFilesScene = (function() {
             var w   = HaxrcorpFont16.textWidth(msg);
             HaxrcorpFont16.draw(ctx, msg,
                 Math.floor((canvas.w - w) / 2),
-                this.containerY + 18, '#999');
+                this.containerY + 18, '#c48021');
             return;
         }
 

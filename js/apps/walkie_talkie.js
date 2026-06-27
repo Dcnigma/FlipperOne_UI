@@ -611,7 +611,7 @@ var WalkieTalkieScene = (function() {
     };
 
     WalkieTalkieScene.prototype.render = function(canvas) {
-        canvas.clear('#ffa550');
+        canvas.clear('#ffab3d');
         // Idle PNG is always painted first as the base layer.
         // Pressed PNG gets layered ON TOP while PTT is held —
         // it's expected to have transparent regions so the idle
@@ -694,7 +694,7 @@ var WalkieTalkieScene = (function() {
             width:       VOL_CHIP_W, height: VOL_CHIP_H,
             anchorH:     'left',     anchorV:'top',
             showStroke:  false,
-            fillColor:   '#d18828',  showFill: true,
+            fillColor:   '#613708',  showFill: true,
             cornerRadius: VOL_CHIP_R,
             corners: { tl: true, tr: true, bl: true, br: true }
         }).render(canvas);
@@ -753,7 +753,7 @@ var WalkieTalkieScene = (function() {
             ctx2.clip();
             ctx2.translate(cx, cy);
             ctx2.rotate(-Math.PI / 2);
-            HaxrcorpFont16.draw(ctx2, valStr, -halfW, -halfH, '#ffa550');
+            HaxrcorpFont16.draw(ctx2, valStr, -halfW, -halfH, '#ffab3d');
             ctx2.restore();
         }
         // Black text clipped to the gray remainder.

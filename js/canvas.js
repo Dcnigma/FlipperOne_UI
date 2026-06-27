@@ -153,7 +153,7 @@ var FlipCanvas = (function() {
     // Middle button — both top corners rounded
     FlipCanvas.prototype.drawMiddleButton = function(text, x, w, pressed, disabled) {
         var y = this.h - BTN_H;
-        var c = disabled ? { bg: '#CCC', fg: '#999' } : _btnColors(pressed);
+        var c = disabled ? { bg: '#ccc', fg: '#c48021' } : _btnColors(pressed);
         this.ctx.fillStyle = c.bg;
         // Fill main areas (4px radius)
         this.ctx.fillRect(x + 3, y,      w - 6, 1);         // Row 0: 4px from edges
@@ -189,7 +189,7 @@ var FlipCanvas = (function() {
         this.drawMiddleButton('', x, w, pressed, disabled);
         if (!icon) return;
         var y = this.h - BTN_H;
-        var c = disabled ? { bg: '#CCC', fg: '#999' } : _btnColors(pressed);
+        var c = disabled ? { bg: '#ccc', fg: '#c48021' } : _btnColors(pressed);
         var ix = x + Math.floor((w - icon.w) / 2);
         // Centred, plus an optional per-button vertical nudge (dy).
         var iy = y + Math.floor((BTN_H - icon.h) / 2) + (dy || 0);
@@ -238,7 +238,7 @@ var FlipCanvas = (function() {
     // like MiddleButton.
     FlipCanvas.prototype.drawNumericTabButton = function(text, x, y, w, pressed, disabled) {
         var h = BTN_H;
-        var c = disabled ? { bg: '#CCC', fg: '#999' } : _btnColors(pressed);
+        var c = disabled ? { bg: '#ccc', fg: '#c48021' } : _btnColors(pressed);
         var stroke = '#824704';
         this.ctx.fillStyle = c.bg;
         // Fill: full-width interior from the top edge down to
@@ -281,7 +281,7 @@ var FlipCanvas = (function() {
     // on the right side of the screen.
     FlipCanvas.prototype.drawIconTabButton = function(icon, x, y, w, pressed, disabled) {
         var h = BTN_H;
-        var c = disabled ? { bg: '#CCC', fg: '#999' } : _btnColors(pressed);
+        var c = disabled ? { bg: '#ccc', fg: '#c48021' } : _btnColors(pressed);
         var stroke = '#824704';
         this.ctx.fillStyle = c.bg;
         this.ctx.fillRect(x,     y,         w,     h - 3);
@@ -355,7 +355,7 @@ var FlipCanvas = (function() {
     // pair is centred together inside the button.
     FlipCanvas.prototype.drawLeftButton = function(text, x, w, pressed, disabled, icon) {
         var y = this.h - BTN_H;
-        var c = disabled ? { bg: '#CCC', fg: '#999' } : _btnColors(pressed);
+        var c = disabled ? { bg: '#ccc', fg: '#c48021' } : _btnColors(pressed);
         this.ctx.fillStyle = c.bg;
         // Fill main areas (4px right radius)
         this.ctx.fillRect(x,     y,      w - 3, 1);         // Row 0: 4px from right
@@ -380,7 +380,7 @@ var FlipCanvas = (function() {
     // Right button — flush with right screen edge, only top-left corner rounded
     FlipCanvas.prototype.drawRightButton = function(text, x, w, pressed, disabled) {
         var y = this.h - BTN_H;
-        var c = disabled ? { bg: '#CCC', fg: '#999' } : _btnColors(pressed);
+        var c = disabled ? { bg: '#ccc', fg: '#c48021' } : _btnColors(pressed);
         this.ctx.fillStyle = c.bg;
         // Fill main areas (4px left radius)
         this.ctx.fillRect(x + 3, y,      w - 3, 1);         // Row 0: 4px from left
@@ -413,7 +413,7 @@ var FlipCanvas = (function() {
         var y = this.h - BTN_H;
         // Standard button colours: white fill at rest, inverted to
         // black bg / white text while pressed, gray when disabled.
-        var c = disabled ? { bg: '#CCC', fg: '#999' } : _btnColors(pressed);
+        var c = disabled ? { bg: '#ccc', fg: '#c48021' } : _btnColors(pressed);
 
         // Body fill — rounded top-left rectangle (the lower BTN_H px).
         // The step matches the icon's rounded corner so the fill sits

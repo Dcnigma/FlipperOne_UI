@@ -36,7 +36,7 @@ var TouchpadTestScene = (function() {
     }
 
     function inBounds(x, y) {
-        return x >= 0 && x < 1024 && y >= UI.STATUS_BAR_H && y < 600;
+        return x >= 0 && x < 256 && y >= UI.STATUS_BAR_H && y < 144;
     }
 
     function requestRender() {
@@ -137,22 +137,22 @@ var TouchpadTestScene = (function() {
 
         var s = state.segments;
         for (var i = 0; i < s.length; i++) {
-            canvas.drawLine(s[i].x0, s[i].y0, s[i].x1, s[i].y1, '#ffa550');
+            canvas.drawLine(s[i].x0, s[i].y0, s[i].x1, s[i].y1, '#ffab3d');
         }
 
         if (state.cursorX >= 0) {
             var x = state.cursorX, y = state.cursorY;
-            canvas.drawHLine(Math.max(0, x - 3), y, 7, '#ffa550');
-            canvas.drawVLine(x, Math.max(UI.STATUS_BAR_H, y - 3), 7, '#ffa550');
+            canvas.drawHLine(Math.max(0, x - 3), y, 7, '#ffab3d');
+            canvas.drawVLine(x, Math.max(UI.STATUS_BAR_H, y - 3), 7, '#ffab3d');
         }
 
         if (s.length === 0 && state.moves === 0) {
-            canvas.drawText('Move finger or mouse', 4, 18, '#f7c52f');
-            canvas.drawText('OK clear  BACK exit', 4, canvas.h - 9, '#f7c52f');
+            canvas.drawText('Move finger or mouse', 4, 18, '#888');
+            canvas.drawText('OK clear  BACK exit', 4, canvas.h - 9, '#888');
         } else {
             var stat = 'm:' + state.moves + ' t:' + state.taps;
             var sw = canvas.textWidth(stat);
-            canvas.drawText(stat, canvas.w - sw - 4, canvas.h - 9, '#f7c52f');
+            canvas.drawText(stat, canvas.w - sw - 4, canvas.h - 9, '#888');
         }
     };
 

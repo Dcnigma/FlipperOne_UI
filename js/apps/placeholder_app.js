@@ -74,7 +74,7 @@ var PlaceholderAppScene = (function() {
     };
 
     PlaceholderAppScene.prototype.render = function(canvas) {
-        canvas.clear('#ffa550');
+        canvas.clear('#ffab3d');
         // Skip drawImage until the load has resolved — drawImage on
         // an incomplete Image throws in some browsers.
         if (this.image && this.image.complete && this.image.naturalWidth > 0) {

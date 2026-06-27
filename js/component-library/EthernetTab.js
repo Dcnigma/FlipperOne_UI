@@ -8,7 +8,7 @@
  *     number; right-aligned status "Connected" in HaxrcorpFont16, 8px
  *     from the right.
  *   - When disconnected: only the icon, port number, and a right-aligned
- *     "Disconnected" status. The whole tab renders greyed out (#f7c52f).
+ *     "Disconnected" status. The whole tab renders greyed out (#888).
  *
  * States:
  *   - `selected === false` → ResponsiveFrame (rounded rect, no shadow).
@@ -33,7 +33,7 @@ var EthernetTab = (function() {
     // 3px higher than the HaxrcorpFont16 IP / status text.
     var NAME_DRAW_Y     = 3;   // Born2bSporty "ETHn"
     var INFO_DRAW_Y     = 4;   // HaxrcorpFont16 role + speed/disconnected
-    var DIM_COLOR       = '#f7c52f888';
+    var DIM_COLOR       = '#888888';
 
     // Expansion: the top row keeps its collapsed layout; additional
     // details render below it. Extras are padded from the row bottom
@@ -160,7 +160,7 @@ var EthernetTab = (function() {
                 strokeColor: '#000000',
                 showStroke: true,
                 showFill: true,
-                fillColor: '#ffa550',
+                fillColor: '#ffab3d',
                 // Disconnected tabs aren't actionable — pressing OK
                 // is a no-op (gated in the scene). Drop the drill-in
                 // chevron so the tab visually conveys that.
@@ -169,17 +169,17 @@ var EthernetTab = (function() {
             sel.render(canvas);
         } else {
             // Unselected frame stroke is a neutral grey regardless of
-            // connection state (#999). Content colours still follow
+            // connection state (#c48021). Content colours still follow
             // `fg` so disconnected tabs read as greyed out overall.
             var frame = new ResponsiveFrame({
                 x: this.x, y: this.y,
                 width: this.w, height: totalH,
                 anchorH: 'left', anchorV: 'top',
                 cornerRadius: CORNER_RADIUS,
-                strokeColor: '#eda74c',
+                strokeColor: '#c48021',
                 showStroke: true,
                 showFill: true,
-                fillColor: '#ffa550'
+                fillColor: '#ffab3d'
             });
             frame.render(canvas);
         }
@@ -268,7 +268,7 @@ var EthernetTab = (function() {
             if (py >= pillH - pillBLr) li = py - (pillH - pillBLr);
             var rowStart = pillLeft + li;
             var rowW = rowEndExcl - rowStart;
-            if (rowW > 0) canvas.drawRect(rowStart, pillTop + py, rowW, 1, '#824704');
+            if (rowW > 0) canvas.drawRect(rowStart, pillTop + py, rowW, 1, '#ccc');
         }
 
         // Draw the top-right cluster on top of the pill — same

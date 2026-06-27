@@ -43,23 +43,23 @@ var DiskSpaceScene = (function() {
         var barH = 5;
 
         if (loading) {
-            canvas.drawText('Loading...', 4, y, '#f7c52f');
+            canvas.drawText('Loading...', 4, y, '#888');
         } else if (error) {
-            canvas.drawText('SD Card: Error', 4, y, '#f7c52f');
+            canvas.drawText('SD Card: Error', 4, y, '#888');
         } else if (!sdCard.mounted) {
-            canvas.drawText('SD Card: Not mounted', 4, y, '#f7c52f');
+            canvas.drawText('SD Card: Not mounted', 4, y, '#888');
         } else {
             var pct = Math.round((sdCard.used / sdCard.total) * 100);
-            canvas.drawText('SD Card: ' + sdCard.used + '/' + sdCard.total + ' GB (' + pct + '%)', 4, y, '#ffa550');
+            canvas.drawText('SD Card: ' + sdCard.used + '/' + sdCard.total + ' GB (' + pct + '%)', 4, y, '#ffab3d');
 
             var barY = y + 10;
             var barW = canvas.w - 12;
-            canvas.drawFrame(4, barY, barW + 2, barH + 2, '#f7c52f');
+            canvas.drawFrame(4, barY, barW + 2, barH + 2, '#888');
             var fillW = Math.round(barW * (sdCard.used / sdCard.total));
-            canvas.drawRect(5, barY + 1, fillW, barH, '#ffa550');
+            canvas.drawRect(5, barY + 1, fillW, barH, '#ffab3d');
         }
 
-        canvas.drawText('[Back]', 4, canvas.h - 9, '#f7c52f');
+        canvas.drawText('[Back]', 4, canvas.h - 9, '#888');
     };
 
     return DiskSpaceScene;
