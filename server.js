@@ -241,7 +241,32 @@ var QMI_DEV = '/dev/cdc-wdm0';
 // no child process. On each EV_SYN/SYN_REPORT we flush the current
 // "x,y,touching" triple to every SSE subscriber as one short line. With
 // no subscribers we skip the write entirely, so idle cost is zero.
-var TOUCHPAD_DEV = '/dev/input/event1';
+// Auto-detect Waveshare/Goodix touch (or built-in raspberrypi-ts)
+// from /proc/bus/input/devices. Set TOUCH_DEVICE env to override.
+function findTouchDevice() {
+    if (TOUCH_DEVICE) return TOUCH_DEVICE;
+    try {
+        var txt = fs.readFileSync('/proc/bus/input/devices', 'utf8');
+        var blocks = txt.split('\n\n');
+        for (var i = 0; i < blocks.length; i++) {
+            var b = blocks[i];
+            if (!/Name="[^"]*(Goodix|TouchScreen|touchscreen|raspberrypi-ts|FT5|GT911|EP0790)/i.test(b)) continue;
+            var h = b.match(/Handlers=[^\n]*?\b(event\d+)/);
+            if (h) return '/dev/input/' + h[1];
+        }
+    } catch (e) {}
+    return null;
+}
+
+function startTouchpadStream() {
+    if (!TOUCHPAD_DEV) { console.warn('[touchpad] no device — SSE disabled'); return; }
+    var stream;
+    try { stream = fs.createReadStream(TOUCHPAD_DEV); }
+    catch (e) { console.warn('[touchpad] open failed: ' + e.message); return; }
+    // ... rest unchanged ...
+    
+var TOUCHPAD_DEV = findTouchDevice();
+console.log('[touch] device = ' + (TOUCHPAD_DEV || '(none detected)'));
 var touchpadClients = new Set();
 var tpX = 0, tpY = 0, tpTouching = false;
 
@@ -1702,7 +1727,7 @@ function playRadioStream(url) {
 // child's exit listener so a crash mid-recording can't desync
 // them — every observer (status endpoint, the next start) sees
 // "not recording" once the OS has actually torn the process down.
-var RECORDINGS_DIR = '/flipperone-testing/sound/voice_recordings';
+
 var recordChild    = null;            // sox ChildProcess while recording
 var recordPaused   = false;           // true while SIGSTOPped via /api/record/pause
 var recordState    = null;            // { file, startedAt: ms } while recording
@@ -2720,19 +2745,49 @@ function getBcm2835Card() {
 function forceHeadphoneRoute() {
     try { execSync('amixer cset numid=3 1', { stdio: 'ignore' }); } catch (e) {}
 }
+// Backward-compat alias for the old NAU8822 code paths that
+// still scan the file (recorder, mic monitor, sound output).
+// Pi has one analog card (bcm2835); point both names at it.
+function getNau8822Card() { return getBcm2835Card(); }
 
-// Volume helpers — bcm2835 only exposes the "PCM" simple control.
+
+// Pi: bcm2835 exposes ONE simple control ("PCM") that drives the
+// headphone jack. The legacy API still returns {speaker, headphone}
+// shape so the UI's two sliders both work — they just move
+// together (which is correct: it's one physical output).
 function getVolume() {
-    try {
-        var card = getBcm2835Card();
-        var out = execSync('amixer -c ' + card + " sget PCM | grep -oE '[0-9]+%' | head -1").toString().trim();
-        return parseInt(out, 10) || 0;
-    } catch (e) { return 0; }
-}
-function setVolume(pct) {
+    var result = { speaker: null, headphone: null, speakerMuted: false, headphoneMuted: false };
     var card = getBcm2835Card();
-    pct = Math.max(0, Math.min(100, parseInt(pct, 10) || 0));
-    try { execSync('amixer -c ' + card + ' sset PCM ' + pct + '%', { stdio: 'ignore' }); } catch (e) {}
+    try {
+        var out = execSync('amixer -c ' + card + ' get PCM 2>/dev/null', { encoding: 'utf8', timeout: 2000 });
+        var mp = out.match(/\[(\d+)%\]/);
+        if (mp) {
+            var pct = parseInt(mp[1], 10);
+            result.speaker = pct;
+            result.headphone = pct;
+        }
+        var muted = /\[off\]/.test(out);
+        result.speakerMuted = muted;
+        result.headphoneMuted = muted;
+    } catch (e) {}
+    return result;
+}
+
+function setVolume(control, pct) {
+    var card = getBcm2835Card();
+    // Accept the legacy two-control API but map both to PCM.
+    if (control !== 'Speaker' && control !== 'Headphone') {
+        return { success: false, error: 'Invalid control' };
+    }
+    pct = Math.max(0, Math.min(100, parseInt(pct, 10)));
+    try {
+        var muteArg = (pct === 0) ? 'mute' : 'unmute';
+        execSync('amixer -c ' + card + ' set PCM ' + pct + '% ' + muteArg + ' 2>/dev/null',
+            { encoding: 'utf8', timeout: 2000 });
+        return { success: true, volume: pct, muted: pct === 0 };
+    } catch (e) {
+        return { success: false, error: e.message };
+    }
 }
 
 // Default ALSA device for sox/mpg123 children
