@@ -1135,39 +1135,50 @@ function _trackChildExit(child) {
     });
 }
 
-// Kill the current audioChild (if any) and update `_audioChildExit`
-// so the next spawn knows when it's safe to claim the codec.
-// If there's no audioChild, leave `_audioChildExit` alone — a
-// previous caller (pausePlayback) may have set it to a real
-// exit promise that the next playRecording still needs to wait
-// on. Resetting to Promise.resolve() here would let the next
-// spawn race the dying child.
+// Kill the current audio child (sox / mpg123 / aplay) and wait
+// briefly for the kernel to release the ALSA device before
+// returning. Without the wait, a fast restart can hit
+// "Device or resource busy" because the old PCM handle is
+// still being torn down.
 function _killAudioChild() {
     if (!audioChild) return;
-    var oldChild = audioChild;
-    audioChild = null;
-    _audioChildExit = _trackChildExit(oldChild);
-    // SIGKILL, not SIGTERM — graceful shutdown lets sox flush
-    // ALSA for tens of ms, during which the next spawn races
-    // and hits "Device or resource busy". SIGKILL has the
-    // kernel reap the process; ALSA's release happens
-    // synchronously inside the kernel's cleanup, so the
-    // `exit`-event resolve is a true "codec is free" signal.
-    try { oldChild.kill('SIGKILL'); } catch (e) { /* already dead */ }
+    var child = audioChild;
+    audioChild = null;          // null first — exit handler is a no-op
+    radioPlaying = false;
+    try { child.kill('SIGTERM'); } catch (e) {}
+
+    // Give it 250 ms to die cleanly, then SIGKILL.
+    // execSync('sleep') is intentional: this function is called
+    // from the very top of playRadioStream(), and we want the
+    // new mpg123 to spawn *after* the device is free.
+    var deadline = Date.now() + 250;
+    while (Date.now() < deadline) {
+        try {
+            // Signal 0 = "is this PID still alive?" — throws if gone.
+            process.kill(child.pid, 0);
+            // Busy-wait 20 ms — small enough to feel instant,
+            // large enough not to spin the CPU.
+            execSync('sleep 0.02');
+        } catch (e) {
+            return;             // child is gone, ALSA is free
+        }
+    }
+    try { child.kill('SIGKILL'); } catch (e) {}
+    // One last small breath for the kernel to release the device.
+    try { execSync('sleep 0.05'); } catch (e) {}
 }
 
+// Stop whatever is playing right now. Single source of truth,
+// safe to call when nothing is playing.
 function stopSound() {
-    // Break the walkie-talkie respawn loop, if one is running.
-    walkieActive = false;
-    radioPlaying = false;
     _killAudioChild();
-    // Clear the recorder's playback state too — /api/sound/stop
-    // is the canonical "stop everything" call, so the player
-    // overlay's status should reflect a fully-stopped state on
-    // its next poll.
-    if (typeof audioPlay !== 'undefined') {
-        audioPlay = null;
-    }
+    // Belt-and-braces: if any stray mpg123/sox is still around
+    // (e.g. the previous run before this patch), reap it now so
+    // the new spawn isn't blocked by a zombie holding the PCM.
+    try {
+        execSync('pkill -TERM -x mpg123 2>/dev/null; pkill -TERM -x sox 2>/dev/null; true',
+                 { stdio: 'ignore', timeout: 500, shell: '/bin/bash' });
+    } catch (e) { /* none running */ }
 }
 
 // ── Walkie Talkie audio loop ─────────────────────────────────────
@@ -1676,6 +1687,15 @@ function playRadioStream(url) {
     }
     // Reuse the existing one-thing-at-a-time invariant.
     try { stopSound(); } catch (e) {}
+
+    // Defensive: stopSound() should have done this, but if it
+    // silently failed (permission to kill missing, etc.) we must
+    // not orphan a child or report the wrong playing-state.
+    if (audioChild) {
+        try { audioChild.kill('SIGKILL'); } catch (e) {}
+        audioChild = null;
+    }
+    radioPlaying = false;
 
     var card = getBcm2835Card();
     var dev  = 'plughw:' + card + ',0';
