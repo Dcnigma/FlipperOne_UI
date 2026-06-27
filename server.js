@@ -894,45 +894,102 @@ function getHdmiMode(connName, res) {
     return mode;
 }
 
-// DRM HDMI connector status from sysfs. Usually a single
-// card2-HDMI-A-1, but we scan every HDMI-A-N so a multi-output board
-// still reports correctly. `connected` is true if any HDMI connector
-// reads "connected". Note: a TV in standby may keep HPD asserted
-// (stays "connected") or drop it (flips to "disconnected") — this
-// reflects HPD only, not the TV's actual power state.
+// Query xrandr (as the desktop user — root has no X auth) for
+// every connected output's CURRENT mode. Returns a map of
+// output-name → "WxH NNHz" so getHdmiStatus can prefer the live
+// mode over the EDID-preferred one from /sys/class/drm.
+//
+// xrandr --listmonitors gives us only active monitors; what we
+// really want is the line under `--query` that begins with the
+// connector name and includes "WxH+X+Y" (active geometry) and
+// the asterisked refresh-rate mode below it.
+function activeXrandrModes() {
+    var map = {};
+    var dump = xUserCmd('xrandr --query');
+    if (!dump) return map;
+    var lines = dump.split('\n');
+    var current = null;
+    for (var i = 0; i < lines.length; i++) {
+        var ln = lines[i];
+        // Connector header: e.g. "HDMI-1 connected 1920x1080+1024+0 (...)"
+        var hdr = ln.match(/^(\S+)\s+connected\s+(?:primary\s+)?(\d+x\d+)\+\d+\+\d+/);
+        if (hdr) {
+            current = hdr[1];
+            map[current] = { res: hdr[2], rate: null };
+            continue;
+        }
+        // Reset on next un-indented "<name> connected/disconnected" header
+        if (/^\S+\s+(connected|disconnected)\b/.test(ln)) { current = null; continue; }
+        if (!current) continue;
+        // Mode lines look like: "   1920x1080     60.00*+  59.94    50.00 ..."
+        // The starred rate is the active one.
+        var rm = ln.match(/^\s+(\d+x\d+)\s+([\d.]+)\*/);
+        if (rm && rm[1] === map[current].res) {
+            map[current].rate = Math.round(parseFloat(rm[2]));
+        }
+    }
+    // Collapse to "WxH NNHz" strings.
+    var out = {};
+    Object.keys(map).forEach(function(k) {
+        out[k] = map[k].rate ? map[k].res + ' ' + map[k].rate + 'Hz' : map[k].res;
+    });
+    return out;
+}
+
+// DRM HDMI connector status from sysfs, with the resolution
+// reconciled against xrandr's active mode where possible. Pi/Kali
+// quirk: /sys/.../modes lists EDID-PREFERRED modes (the TV's
+// native), which can differ from what xrandr is actually driving
+// (e.g. user picked 1920x1080 in display settings on a 1440p
+// TV). Without this reconciliation the UI shows the TV's native
+// res and confuses the user.
 function getHdmiStatus() {
     var DRM_DIR = '/sys/class/drm';
     var connectors = [];
     var connected = false;
     var resolution = null;
+    var xrandrModes = activeXrandrModes();   // { 'HDMI-1': '1920x1080 60Hz', ... }
     try {
         var entries = fs.readdirSync(DRM_DIR);
         for (var i = 0; i < entries.length; i++) {
-            if (!/-HDMI-A-\d+$/.test(entries[i])) continue;
-            var base = DRM_DIR + '/' + entries[i];
+            // Accept both naming conventions: card*-HDMI-A-N (vc4)
+            // and card*-HDMI-N (some kernels). Either way we strip
+            // the cardN- prefix to get the xrandr name.
+            if (!/-HDMI(-A)?-\d+$/.test(entries[i])) continue;
+            var base   = DRM_DIR + '/' + entries[i];
+            var xName  = entries[i].replace(/^card\d+-/, '')   // → HDMI-A-1 / HDMI-1
+                                   .replace(/^HDMI-A-/, 'HDMI-'); // xrandr uses HDMI-N
             var status = 'unknown';
             try { status = fs.readFileSync(base + '/status', 'utf8').trim(); } catch (e) {}
-            // This connector's `status` can stick at "unknown" after a
-            // hot-plug — it isn't the active display, so the kernel
-            // doesn't poll it. EDID presence is the reliable attach
-            // signal (it clears to 0 bytes on unplug), so treat
-            // EDID-present (and not explicitly "disconnected") as connected.
             var edidBytes = 0;
             try { edidBytes = fs.readFileSync(base + '/edid').length; } catch (e) {}
-            var isConn = (status === 'connected') || (status !== 'disconnected' && edidBytes > 0);
+            var isConn = (status === 'connected')
+                       || (status !== 'disconnected' && edidBytes > 0);
             var res = null;
             if (isConn) {
                 connected = true;
-                var res0 = null;
-                try {
-                    // First line of `modes` is the preferred/native mode.
-                    var modes = fs.readFileSync(base + '/modes', 'utf8').trim();
-                    if (modes) res0 = modes.split('\n')[0].trim() || null;
-                } catch (e) {}
-                res = getHdmiMode(entries[i], res0);   // adds " NNHz" when available
+                // Prefer xrandr's ACTIVE mode (what the user is actually
+                // seeing). Fall back to the sysfs/EDID first-line mode
+                // only when xrandr isn't reachable (e.g. no X session).
+                if (xrandrModes[xName]) {
+                    res = xrandrModes[xName];
+                } else {
+                    var res0 = null;
+                    try {
+                        var modes = fs.readFileSync(base + '/modes', 'utf8').trim();
+                        if (modes) res0 = modes.split('\n')[0].trim() || null;
+                    } catch (e) {}
+                    res = getHdmiMode(entries[i], res0);
+                }
                 if (!resolution && res) resolution = res;
             }
-            connectors.push({ name: entries[i], status: status, connected: isConn, resolution: res });
+            connectors.push({
+                name:       entries[i],
+                xName:      xName,
+                status:     status,
+                connected:  isConn,
+                resolution: res
+            });
         }
     } catch (e) {}
     return { connected: connected, resolution: resolution, connectors: connectors };
@@ -4077,8 +4134,24 @@ var server = http.createServer(function(req, res) {
     // present. TV Media Box polls this on enter() and gates an install
     // modal behind a missing binary (mirrors /api/radio/status).
     if (req.url === '/api/cec/status' && req.method === 'GET') {
+        // Auto-enable on first status call so the TV Media Box scene
+        // doesn't read "not enabled" on a fresh boot. cec-ctl --playback
+        // is idempotent; we only fire it once we've confirmed:
+        //   • cec-ctl is installed AND a /dev/cecN node exists
+        //   • the adapter has not already claimed a logical address
+        //   • Kodi isn't already owning the device (would EBUSY)
+        // Cheap to call — it's just one execSync — and turns the
+        // user-visible "Enable CEC" button into a no-op on most flows.
+        var st = getCecState();
+        if (st.installed && st.cecDevice && !st.enabled && !st.kodiOwnsCec) {
+            try {
+                execSync('cec-ctl -d ' + cecDev() + ' --playback --osd-name "RPi" 2>&1',
+                         { encoding: 'utf8', timeout: 5000 });
+                st = getCecState();    // re-read after enable
+            } catch (e) { /* swallow — keep returning the "not enabled" state */ }
+        }
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(getCecState()));
+        res.end(JSON.stringify(st));
         return;
     }
     // ── /api/cec/enable ──────────────────────────────────────────
