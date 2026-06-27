@@ -36,6 +36,7 @@ var micChild        = null;     // arecord child for /api/mic/level monitor
 var micLeft         = 0;        // 0..100 percent peak, left channel
 var micRight        = 0;        // 0..100 percent peak, right channel
 var micSubscribers  = [];       // SSE response objects for /api/mic/level/stream
+var lastRadioErr = '';
 
 // Async exec helper that swallows errors. Returns { stdout, stderr } on
 // success, null on any failure (non-zero exit, timeout, missing binary).
@@ -1655,78 +1656,85 @@ function setExtlinuxDefault(target) {
     }
 }
 
-// ── Internet radio streaming ─────────────────────────────────────
-// mpg123 streams MP3/Shoutcast/Icecast directly over HTTP, so the
-// radio scene can hand us a URL and we hand it straight to a
-// child process. Reuses the same `audioChild` slot as the
-// file-playback path — only one thing plays at a time, and the
-// existing `stopSound()` machinery cleans up either case
-// uniformly.
-//
-// `spawn` (not exec/shell) so the URL goes in as its own argv —
-// no shell metacharacters in the user-supplied string ever reach
-// /bin/sh. URL scheme is also gated to http(s) on the way in.
+// ── playRadioStream(url) ────────────────────────────────────────
+// Hardened Pi/Kali version. Key differences vs. the original
+// Flipper code:
+//   • Device is resolved at call time from getBcm2835Card() →
+//     plughw:<card>,0 so we never hit a stale hw:1,0 that worked
+//     on Flipper but doesn't exist on a Pi.
+//   • Uses spawn() with an argv array, not exec() with a shell
+//     string — URLs with &, ?, = etc. can't be misparsed.
+//   • stderr is captured & logged (last 4 KB kept in memory so
+//     a follow-up GET /api/radio/status can include it).
+//   • Child exit logs reason + code so we can see why mpg123
+//     died on the next failure.
+//   • radioPlaying tracks the live child — set on spawn,
+//     cleared on exit. /api/radio/status now reflects reality.
 function playRadioStream(url) {
-    if (typeof url !== 'string' || !/^https?:\/\//i.test(url)) {
-        return { success: false, error: 'Invalid URL' };
+    if (!url || typeof url !== 'string') {
+        return { success: false, error: 'Missing URL' };
     }
-    // Mark playing now (intent). The child's exit handler flips it
-    // back off if the stream fails / ends; set here so a status
-    // poll right after Play can't briefly read stale 'false' while
-    // a deferred respawn is pending.
+    // Reuse the existing one-thing-at-a-time invariant.
+    try { stopSound(); } catch (e) {}
+
+    var card = getBcm2835Card();
+    var dev  = 'plughw:' + card + ',0';
+    var args = [
+        '-a', dev,           // ALSA device (resolved live)
+        '-q',                // quiet — only errors on stderr
+        '--no-control',      // don't try to read keys from stdin
+        '-b', '8192',        // 8 MB ring buffer — smooth out network jitter
+        url
+    ];
+    console.log('[radio] mpg123', args.join(' '));
+
+    try {
+        audioChild = spawn('mpg123', args, {
+            stdio: ['ignore', 'pipe', 'pipe'],
+            env: Object.assign({}, process.env, {
+                PATH: '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'
+            })
+        });
+    } catch (e) {
+        console.error('[radio] spawn failed:', e.message);
+        audioChild  = null;
+        radioPlaying = false;
+        return { success: false, error: 'spawn failed: ' + e.message };
+    }
+
     radioPlaying = true;
-    var spawn = require('child_process').spawn;
+    radioUrl     = url;
+    lastRadioErr = '';                       // reset error buffer
 
-    function doSpawn() {
-        var args = ['-q'];
-        // Route to the same ALSA device the rest of the audio
-        // stack is using when the user has explicitly picked
-        // one — but wrap a raw `hw:` form in `plughw:` so ALSA's
-        // plug layer handles any sample-rate / format mismatch.
-        // mpg123 outputs the MP3's native rate (44.1 kHz for
-        // pop stations), which the HDMI card on this SoC
-        // rejects through `hw:` even though the rate is inside
-        // its [32000–48000] range — plughw resamples on the
-        // fly and "Speaker", "Headphone", and "HDMI" all work
-        // off the same code path.
-        if (selectedAlsaDevice) {
-            var dev = selectedAlsaDevice;
-            if (/^hw:/.test(dev)) dev = 'plug' + dev;
-            args.push('-a', dev);
-        }
-        args.push(url);
-        var child = spawn('mpg123', args, { stdio: 'ignore' });
-        // Identity-guard the global reference: only null it
-        // out if we still ARE the active child. Without this,
-        // a stale predecessor's exit event (which races with
-        // the next playRadioStream call) overwrites the new
-        // process's reference and the radio orphans. The exit
-        // also flips radioPlaying off — a dead stream's mpg123
-        // quits on its own, so the UI's "Playing" line clears.
-        child.on('exit',  function() { if (audioChild === child) { audioChild = null; radioPlaying = false; } });
-        child.on('error', function() { if (audioChild === child) { audioChild = null; radioPlaying = false; } });
-        audioChild = child;
-    }
+    audioChild.stdout.on('data', function(buf) {
+        // mpg123 -q is silent on stdout in steady state; only
+        // banner/diagnostic lines arrive here. Keep them for
+        // post-mortem debugging.
+        var s = buf.toString();
+        if (s.trim()) console.log('[radio:out]', s.trim());
+    });
+    audioChild.stderr.on('data', function(buf) {
+        var s = buf.toString();
+        lastRadioErr = (lastRadioErr + s).slice(-4096);
+        // Trim trailing newline before logging so the prefix
+        // lines up — mpg123 ends most messages with \n.
+        console.error('[radio:err]', s.replace(/\n+$/, ''));
+    });
+    audioChild.on('exit', function(code, signal) {
+        console.log('[radio] mpg123 exited code=' + code + ' signal=' + signal);
+        radioPlaying = false;
+        audioChild   = null;
+        // radioUrl is kept so /api/radio/status can still report
+        // what was last attempted; the client uses playing:false
+        // as the definitive "not running" signal.
+    });
+    audioChild.on('error', function(err) {
+        console.error('[radio] child error:', err.message);
+        radioPlaying = false;
+        audioChild   = null;
+    });
 
-    var oldChild = audioChild;
-    audioChild = null;
-    if (oldChild) {
-        // Drop the old process's exit/error listeners so they
-        // can't fire later and stomp on `audioChild` after
-        // the new mpg123 has been assigned to it. Then SIGKILL
-        // and wait for the kernel to actually reap the
-        // process before spawning — that's the only way to
-        // guarantee the ALSA device is free.
-        oldChild.removeAllListeners('exit');
-        oldChild.removeAllListeners('error');
-        oldChild.once('exit',  doSpawn);
-        oldChild.once('error', doSpawn);
-        try { oldChild.kill('SIGKILL'); }
-        catch (e) { doSpawn(); }
-    } else {
-        doSpawn();
-    }
-    return { success: true, url: url };
+    return { success: true };
 }
 
 // ── Voice recorder ───────────────────────────────────────────────
