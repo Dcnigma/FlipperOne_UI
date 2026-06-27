@@ -770,9 +770,15 @@ async function refreshDisk() {
     diskCache = result;
 }
 
-var SOUND_DIR = '/flipperone-testing/sound/audio_files';
-var DRIVER_SCRIPT = '/flipperone-testing/sound/audio-driver-restart.sh';
-var audioChild = null;
+// ===== Raspberry Pi 4 / Kali / X11 / DSI-1 config =====
+var MEDIA_BASE     = process.env.MEDIA_BASE     || '/home/kali/media-box';
+var SOUND_DIR      = process.env.SOUND_DIR      || path.join(MEDIA_BASE, 'sounds');
+var RECORDINGS_DIR = process.env.RECORDINGS_DIR || path.join(MEDIA_BASE, 'recordings');
+var MEDIA_USER     = process.env.MEDIA_USER     || 'kali';
+var X_DISPLAY      = process.env.DISPLAY        || ':0';
+var X_AUTHORITY    = process.env.XAUTHORITY     || ('/home/' + MEDIA_USER + '/.Xauthority');
+var DSI_DEFAULT_MODE = process.env.DSI_MODE     || '1024x600';
+var TOUCH_DEVICE   = process.env.TOUCH_DEVICE   || null; // auto-detected at startup if null
 // True only while a radio stream's mpg123 child is alive. Set
 // when playRadioStream starts, cleared when that child exits (a
 // dead URL makes mpg123 quit within a second or two) or when any
@@ -915,16 +921,18 @@ var tvmbPresetName  = null;   // 'Kodi TV' | 'Linux Desktop' | null
 // Preset name → shell command. Each command is invoked via
 // `sh -c` so we can pipe through `su` and pick up the user's
 // XDG/runtime dirs.
+// All children inherit DISPLAY/XAUTHORITY so they land on the DSI-1 X session.
+function asUserX(cmd) {
+    return "su - " + MEDIA_USER +
+           " -c 'DISPLAY=" + X_DISPLAY +
+           " XAUTHORITY=" + X_AUTHORITY + " " + cmd + "'";
+}
+
 var TVMB_PRESET_CMD = {
-    // Kodi as a Wayland client inside the running KDE session. The
-    // `su - login` does NOT inherit XDG_RUNTIME_DIR here, so we set it
-    // explicitly — without it libwayland can't find the socket and
-    // Kodi falls back to GBM, which collides with KWin on the HDMI
-    // and renders nothing. WAYLAND_DISPLAY picks the session's socket.
-    'Kodi TV':       "su - user -c 'kodi'",
-    'Linux Desktop': "su - user -c 'weston'"
-    // 'AirPlay' deferred — needs a video-capable RPiPlay/uxplay
-    // build and TBD audio routing.
+    'Kodi TV':            asUserX('kodi'),
+    'Kodi (standalone)':  asUserX('kodi-standalone'),
+    'On-screen Keyboard': asUserX('onboard &'),
+    'Xfce Desktop':       asUserX('startxfce4')   // harmless if already running
 };
 function stopPreset() {
     if (tvmbPresetChild) {
@@ -2698,13 +2706,42 @@ function setDefaultDevice(deviceName) {
 }
 
 // Find NAU8822 card number dynamically
-function getNau8822Card() {
+// BCM2835 on-board audio (headphone jack on Pi 4). Picks card by name from /proc/asound/cards.
+function getBcm2835Card() {
     try {
-        var cards = fs.readFileSync('/proc/asound/cards', 'utf8');
-        var m = cards.match(/^\s*(\d+)\s+\[NAU8822/m);
-        return m ? m[1] : null;
-    } catch (e) { return null; }
+        var txt = fs.readFileSync('/proc/asound/cards', 'utf8');
+        // Lines look like: " 0 [Headphones     ]: bcm2835_headpho - bcm2835 Headphones - bcm2835 Headphones"
+        var m = txt.match(/^\s*(\d+)\s*\[[^\]]+\]:\s*bcm2835/m);
+        return m ? parseInt(m[1], 10) : 0;
+    } catch (e) { return 0; }
 }
+
+// Force analog jack (1 = headphones, 2 = HDMI, 0 = auto). Safe to no-op on failure.
+function forceHeadphoneRoute() {
+    try { execSync('amixer cset numid=3 1', { stdio: 'ignore' }); } catch (e) {}
+}
+
+// Volume helpers — bcm2835 only exposes the "PCM" simple control.
+function getVolume() {
+    try {
+        var card = getBcm2835Card();
+        var out = execSync('amixer -c ' + card + " sget PCM | grep -oE '[0-9]+%' | head -1").toString().trim();
+        return parseInt(out, 10) || 0;
+    } catch (e) { return 0; }
+}
+function setVolume(pct) {
+    var card = getBcm2835Card();
+    pct = Math.max(0, Math.min(100, parseInt(pct, 10) || 0));
+    try { execSync('amixer -c ' + card + ' sset PCM ' + pct + '%', { stdio: 'ignore' }); } catch (e) {}
+}
+
+// Default ALSA device for sox/mpg123 children
+function alsaDevice() { return 'plughw:' + getBcm2835Card() + ',0'; }
+
+// Stubs — Pi has no on-board mic
+function getMicLevel() { return { available: false }; }
+function setMicGain()  { return { available: false }; }
+forceHeadphoneRoute();
 
 function getVolume() {
     var result = { speaker: null, headphone: null, speakerMuted: false, headphoneMuted: false };
