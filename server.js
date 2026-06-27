@@ -12,6 +12,31 @@ var exec = require('child_process').exec;
 var spawn = require('child_process').spawn;
 var execAsync = util.promisify(exec);
 
+// ===== Top-level audio/recorder state =====
+// These used to be declared inside individual handlers in the original
+// Flipper One server. Node 22+ throws ReferenceError on read of an
+// undeclared identifier (the old "var-hoist-to-undefined" behaviour
+// is gone in strict-ish module contexts), so they have to live at
+// module scope. Initialised to safe defaults so every `if (audioChild)`
+// / `if (!radioPlaying)` check works on first call.
+var audioChild      = null;     // sox/mpg123 child for /api/sound/play and /api/radio/play
+var radioPlaying    = false;    // true while a radio stream is active
+var radioUrl        = null;     // last URL passed to /api/radio/play (for restart)
+var walkieChild     = null;     // sox loop child for the Walkie Talkie scene
+var walkieRunning   = false;    // gate so child-exit auto-respawn knows when to stop
+var recordChild     = null;     // sox/arecord child for /api/record/start
+var recordingPath   = null;     // file currently being written by recordChild
+var recordLevel     = 0;        // 0..1 peak from the level monitor (SSE)
+var playbackChild   = null;     // sox child for /api/record/play
+var playbackStart   = 0;        // Date.now() when current play segment started
+var playbackOffsetMs= 0;        // resume-from offset in ms
+var playbackPath    = null;     // file currently being played back
+var playbackPaused  = false;
+var micChild        = null;     // arecord child for /api/mic/level monitor
+var micLeft         = 0;        // 0..100 percent peak, left channel
+var micRight        = 0;        // 0..100 percent peak, right channel
+var micSubscribers  = [];       // SSE response objects for /api/mic/level/stream
+
 // Async exec helper that swallows errors. Returns { stdout, stderr } on
 // success, null on any failure (non-zero exit, timeout, missing binary).
 // Endpoints aggregating several commands chain through this so a shell
