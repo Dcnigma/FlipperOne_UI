@@ -303,11 +303,13 @@ var TVMediaBoxScene = (function() {
         var xhr = new XMLHttpRequest();
         xhr.open('POST', '/api/kodi/rpc');
         xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.timeout = 5000;
         xhr.onload = function() {
             try { cb && cb(JSON.parse(xhr.responseText || '{}')); }
             catch (e) { cb && cb({ error: 'Bad response' }); }
         };
-        xhr.onerror = function() { cb && cb({ error: 'Network error' }); };
+        xhr.onerror   = function() { cb && cb({ error: 'Network error' }); };
+        xhr.ontimeout = function() { cb && cb({ error: 'Timeout' }); };
         xhr.send(JSON.stringify({ method: method, params: params || {} }));
     }
 
