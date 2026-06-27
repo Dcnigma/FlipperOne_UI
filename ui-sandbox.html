@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>UI Sandbox</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        :root {
+            --accent: #FF8200;
+            --bg: #0f1013;
+            --panel: #17181c;
+            --panel-border: #26282e;
+            --text: #e6e6e6;
+            --text-dim: #8a8f98;
+            --track: #2a2c33;
+        }
+
+        html, body {
+            background: var(--bg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 32px 24px 48px;
+            gap: 16px;
+            overflow: auto;
+            font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+            color: var(--text);
+            height: auto;
+            min-height: 100vh;
+        }
+        .screen-wrap,
+        .panel,
+        .header,
+        .card,
+        #componentList,
+        #componentDetail { flex-shrink: 0; }
+
+        .header {
+            width: 768px;
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+        }
+        .header h1 {
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            margin: 0;
+        }
+        .header .brand { color: var(--accent); font-weight: 700; }
+
+        .screen-wrap {
+            position: relative;
+            width: 768px;
+            height: 432px;
+            box-shadow: 0 0 0 1px var(--panel-border), 0 10px 30px rgba(0,0,0,0.4);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        #screen {
+            width: 100%; height: 100%;
+            display: block;
+            background-color: #ffa550;
+            background-image:
+                conic-gradient(#c7c9cf 25%, #f4f5f7 25% 50%, #c7c9cf 50% 75%, #f4f5f7 75%);
+            background-size: 12px 12px;
+        }
+        .pixel-grid {
+            position: absolute; inset: 0;
+            pointer-events: none;
+            background-image:
+                linear-gradient(to right, rgba(0,0,0,0.2) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(0,0,0,0.2) 1px, transparent 1px);
+            background-size: 3px 3px;
+        }
+        .pixel-grid.hidden { display: none; }
+
+        #componentList,
+        #componentDetail {
+            width: 768px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .hidden { display: none !important; }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .card {
+            background: var(--panel);
+            border: 1px solid var(--panel-border);
+            border-radius: 8px;
+            padding: 18px 20px;
+            cursor: pointer;
+            transition: border-color 0.15s ease, transform 0.05s ease;
+            text-align: left;
+            font-family: inherit;
+            color: inherit;
+        }
+        .card:hover { border-color: var(--accent); }
+        .card:active { transform: translateY(1px); }
+        .card .card-name {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 6px;
+        }
+        .card .card-desc {
+            font-size: 12px;
+            color: var(--text-dim);
+            line-height: 1.4;
+        }
+
+        .detail-topbar {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            width: 768px;
+        }
+        .back-btn {
+            background: var(--panel);
+            border: 1px solid var(--panel-border);
+            color: var(--text);
+            border-radius: 6px;
+            padding: 8px 14px;
+            font-size: 13px;
+            font-family: inherit;
+            cursor: pointer;
+            transition: border-color 0.15s ease;
+        }
+        .back-btn:hover { border-color: var(--accent); }
+        .detail-name {
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--accent);
+        }
+
+        .panel {
+            width: 768px;
+            background: var(--panel);
+            border: 1px solid var(--panel-border);
+            border-radius: 8px;
+            padding: 16px 20px;
+        }
+        .panel-title {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            margin-bottom: 12px;
+        }
+        .sublabel {
+            font-size: 10px;
+            font-weight: 500;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            margin-bottom: 8px;
+        }
+        .sublabel + .sublabel { margin-top: 12px; }
+
+        .toggles {
+            display: flex;
+            gap: 20px;
+            font-size: 13px;
+            flex-wrap: wrap;
+        }
+        .toggles + .toggles { margin-top: 8px; }
+        .toggles label {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+        }
+        input[type="checkbox"],
+        input[type="radio"] {
+            accent-color: var(--accent);
+            width: 14px; height: 14px;
+            cursor: pointer;
+        }
+        .radio-group {
+            display: flex;
+            gap: 16px;
+            font-size: 13px;
+            flex-wrap: wrap;
+        }
+        .radio-group label {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: 80px 1fr 48px;
+            gap: 10px 14px;
+            align-items: center;
+        }
+        .controls + .controls { margin-top: 8px; }
+        .controls label {
+            font-size: 12px;
+            color: var(--text-dim);
+            letter-spacing: 0.04em;
+        }
+        .controls .val {
+            font-family: 'SF Mono', Menlo, Consolas, monospace;
+            font-size: 13px;
+            text-align: right;
+            color: var(--accent);
+            font-variant-numeric: tabular-nums;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none; appearance: none;
+            width: 100%; height: 4px;
+            background: var(--track);
+            border-radius: 2px; outline: none; cursor: pointer;
+        }
+        input[type="range"]::-webkit-slider-runnable-track { height: 4px; background: var(--track); border-radius: 2px; }
+        input[type="range"]::-moz-range-track { height: 4px; background: var(--track); border-radius: 2px; }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; appearance: none;
+            width: 16px; height: 16px;
+            margin-top: -6px;
+            border-radius: 50%;
+            background: var(--accent); border: 0;
+            transition: box-shadow 0.15s ease;
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 16px; height: 16px;
+            border-radius: 50%;
+            background: var(--accent); border: 0;
+        }
+        input[type="range"]:hover::-webkit-slider-thumb,
+        input[type="range"]:focus::-webkit-slider-thumb { box-shadow: 0 0 0 6px rgba(255,130,0,0.18); }
+        input[type="range"]:hover::-moz-range-thumb,
+        input[type="range"]:focus::-moz-range-thumb { box-shadow: 0 0 0 6px rgba(255,130,0,0.18); }
+
+        .color-row {
+            display: flex; align-items: center; gap: 12px;
+        }
+        .color-row + .color-row { margin-top: 8px; }
+        input[type="color"] {
+            -webkit-appearance: none; appearance: none;
+            width: 56px; height: 28px;
+            background: transparent;
+            border: 1px solid var(--panel-border);
+            border-radius: 4px; cursor: pointer; padding: 0;
+        }
+        input[type="color"]::-webkit-color-swatch-wrapper { padding: 2px; }
+        input[type="color"]::-webkit-color-swatch { border: none; border-radius: 2px; }
+        input[type="color"]::-moz-color-swatch { border: none; border-radius: 2px; }
+        .color-row code {
+            font-family: 'SF Mono', Menlo, Consolas, monospace;
+            font-size: 13px;
+            color: var(--accent);
+            text-transform: uppercase;
+        }
+
+        ::selection { background: var(--accent); color: #000; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1><span class="brand">flipper</span> · ui sandbox</h1>
+        <span style="font-size:12px;color:var(--text-dim);font-family:'SF Mono',Menlo,monospace">1024 × 600</span>
+    </div>
+
+    <div id="componentList">
+        <div class="panel">
+            <div class="panel-title">component library</div>
+            <div class="card-grid" id="cardGrid"></div>
+        </div>
+    </div>
+
+    <div id="componentDetail" class="hidden">
+        <div class="detail-topbar">
+            <button class="back-btn" id="backBtn">← back to library</button>
+            <span class="detail-name" id="detailName"></span>
+            <button class="back-btn" id="refreshBtn" style="margin-left: auto;" title="reset to defaults">↻ refresh</button>
+        </div>
+
+        <div class="screen-wrap">
+            <canvas id="screen" width="1024" height="600"></canvas>
+            <div class="pixel-grid" id="grid"></div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title">view</div>
+            <div class="toggles">
+                <label><input type="checkbox" id="gridToggle" checked> pixel grid</label>
+                <label><input type="checkbox" id="bboxToggle" checked> bounding box highlight</label>
+            </div>
+        </div>
+
+        <div id="controls"></div>
+    </div>
+
+    <script src="js/font.js"></script>
+    <script src="js/haxrcorp16.js"></script>
+    <script src="js/canvas.js"></script>
+    <script src="js/input.js"></script>
+    <script src="js/component-library/ResponsiveFrame.js"></script>
+    <script src="js/component-library/MenuSelectorFrame.js"></script>
+    <script src="js/component-library/ComponentSelectorFrame.js"></script>
+    <script src="js/sandbox/controls.js"></script>
+    <script src="js/sandbox/main.js"></script>
+</body>
+</html>
