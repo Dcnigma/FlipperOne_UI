@@ -1014,20 +1014,22 @@ function detectXOutputs() {
         }
     }
     // Pass 2: if nothing connected, remember a disconnected HDMI name
-    // anyway so the caller can return a useful "cable not connected"
-    // error rather than "no HDMI output found".
-    if (!out.hdmi) {
-        for (var j = 0; j < lines.length; j++) {
-            var m2 = lines[j].match(/^(HDMI\S*)\s+disconnected\b/i);
-            if (m2) { out.hdmi = m2[1]; break; }
+        // anyway so the caller can return a useful "cable not connected"
+        // error rather than "no HDMI output found".
+        if (!out.hdmi) {
+            for (var j = 0; j < lines.length; j++) {
+                var m2 = lines[j].match(/^(HDMI\S*)\s+disconnected\b/i);
+                if (m2) { out.hdmi = m2[1]; break; }
+            }
         }
+        return out;
     }
 
-// Bring up HDMI as an extended display to the right of DSI-1,
-// keeping DSI-1 as primary. Idempotent — safe to call repeatedly.
-// Returns the parsed HDMI geometry (W,H,X,Y) so the launcher can
-// position Kodi exactly onto it.
-function enableHdmiExtended() {
+    // Bring up HDMI as an extended display to the right of DSI-1,
+    // keeping DSI-1 as primary. Idempotent — safe to call repeatedly.
+    // Returns the parsed HDMI geometry (W,H,X,Y) so the launcher can
+    // position Kodi exactly onto it.
+    function enableHdmiExtended() {
     var io = detectXOutputs();
     if (!io.dsi)  return { ok: false, error: 'No DSI-1 output found' };
     if (!io.hdmi) return { ok: false, error: 'No HDMI output found' };
@@ -1387,15 +1389,15 @@ function stopWalkieLoop() {
 // arrive (no accumulation), so memory and CPU stay bounded. A
 // trailing odd byte at the end of a chunk is dropped — the next
 // chunk's leading byte will pair up naturally.
-var micChild         = null;
-var micLeft          = 0;
-var micRight         = 0;
+//var micChild         = null;
+//var micLeft          = 0;
+//var micRight         = 0;
 // SSE subscribers receiving live level pushes. Populated by the
 // /api/mic/level/stream handler; emptied as connections close.
 // `_lastNotifyAt` rate-limits broadcasts to ~20 Hz even if
 // arecord chunks arrive faster, so the network and the renderer
 // stay calm.
-var micSubscribers   = [];
+//var micSubscribers   = [];
 var micLastNotifyAt  = 0;
 var MIC_NOTIFY_MIN_MS = 50;
 
@@ -3143,29 +3145,6 @@ function setSoundOutput(id) {
     if (!match) return { success: false, error: 'Unknown output' };
     _applyOutputState(match);
     return { success: true, id: id, device: match.device };
-}
-
-function setVolume(control, pct) {
-    var card = getNau8822Card();
-    if (!card) return { success: false, error: 'NAU8822 not found' };
-    if (control !== 'Speaker' && control !== 'Headphone') return { success: false, error: 'Invalid control' };
-    pct = Math.max(0, Math.min(100, parseInt(pct, 10)));
-    try {
-        // Chain `mute` / `unmute` onto the same amixer call so
-        // 0 % genuinely silences the channel (some codec builds
-        // still leak a small audible signal at 0 % volume), and
-        // anything > 0 actively un-mutes — handles the case
-        // where the user nudged volume up after a previous 0 %
-        // muted the channel without dragging the unmute state
-        // along for the ride.
-        var muteArg = (pct === 0) ? 'mute' : 'unmute';
-        execSync('amixer -c ' + card + ' set ' + control + ' '
-                 + pct + '% ' + muteArg + ' 2>/dev/null',
-                 { encoding: 'utf8', timeout: 2000 });
-        return { success: true, volume: pct, muted: pct === 0 };
-    } catch (e) {
-        return { success: false, error: e.message };
-    }
 }
 
 function restartAudioDriver() {
