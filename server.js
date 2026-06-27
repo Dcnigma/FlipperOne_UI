@@ -243,6 +243,7 @@ var QMI_DEV = '/dev/cdc-wdm0';
 // no subscribers we skip the write entirely, so idle cost is zero.
 // Auto-detect Waveshare/Goodix touch (or built-in raspberrypi-ts)
 // from /proc/bus/input/devices. Set TOUCH_DEVICE env to override.
+// Auto-detect Waveshare/Goodix touch (or built-in raspberrypi-ts) ...
 function findTouchDevice() {
     if (TOUCH_DEVICE) return TOUCH_DEVICE;
     try {
@@ -257,36 +258,26 @@ function findTouchDevice() {
     } catch (e) {}
     return null;
 }
-
+var TOUCHPAD_DEV = findTouchDevice();
+console.log('[touch] device = ' + (TOUCHPAD_DEV || '(none detected)'));
+var touchpadClients = new Set();
+var tpX = 0, tpY = 0, tpTouching = false;
 function startTouchpadStream() {
     if (!TOUCHPAD_DEV) { console.warn('[touchpad] no device — SSE disabled'); return; }
     var stream;
     try { stream = fs.createReadStream(TOUCHPAD_DEV); }
     catch (e) { console.warn('[touchpad] open failed: ' + e.message); return; }
-    // ... rest unchanged ...
-    
-var TOUCHPAD_DEV = findTouchDevice();
-console.log('[touch] device = ' + (TOUCHPAD_DEV || '(none detected)'));
-var touchpadClients = new Set();
-var tpX = 0, tpY = 0, tpTouching = false;
-
-function startTouchpadStream() {
-    var stream;
-    try { stream = fs.createReadStream(TOUCHPAD_DEV); }
-    catch (e) { console.warn('[touchpad] open failed: ' + e.message); return; }
-
     stream.on('data', function(chunk) {
         for (var off = 0; off + 24 <= chunk.length; off += 24) {
             var type = chunk.readUInt16LE(off + 16);
             var code = chunk.readUInt16LE(off + 18);
             var val  = chunk.readInt32LE (off + 20);
-            if (type === 3) {                            // EV_ABS
-                if      (code === 0) tpX = val;          // ABS_X
-                else if (code === 1) tpY = val;          // ABS_Y
-            } else if (type === 1 && code === 330) {     // EV_KEY / BTN_TOUCH
+            if (type === 3) {
+                if      (code === 0) tpX = val;
+                else if (code === 1) tpY = val;
+            } else if (type === 1 && code === 330) {
                 tpTouching = (val === 1);
             } else if (type === 0 && code === 0 && touchpadClients.size) {
-                // EV_SYN / SYN_REPORT — frame complete, push to subscribers.
                 var line = 'data:' + tpX + ',' + tpY + ',' + (tpTouching ? 1 : 0) + '\n\n';
                 touchpadClients.forEach(function(res) { res.write(line); });
             }
@@ -2798,24 +2789,6 @@ function getMicLevel() { return { available: false }; }
 function setMicGain()  { return { available: false }; }
 forceHeadphoneRoute();
 
-function getVolume() {
-    var result = { speaker: null, headphone: null, speakerMuted: false, headphoneMuted: false };
-    var card = getNau8822Card();
-    if (!card) return result;
-    try {
-        var spk = execSync('amixer -c ' + card + ' get Speaker 2>/dev/null', { encoding: 'utf8', timeout: 2000 });
-        var ms = spk.match(/\[(\d+)%\]/);
-        if (ms) result.speaker = parseInt(ms[1], 10);
-        result.speakerMuted = /\[off\]/.test(spk);
-    } catch (e) {}
-    try {
-        var hp = execSync('amixer -c ' + card + ' get Headphone 2>/dev/null', { encoding: 'utf8', timeout: 2000 });
-        var mh = hp.match(/\[(\d+)%\]/);
-        if (mh) result.headphone = parseInt(mh[1], 10);
-        result.headphoneMuted = /\[off\]/.test(hp);
-    } catch (e) {}
-    return result;
-}
 
 // ── High-level audio outputs ─────────────────────────────────────
 // The radio app's "Audio device" picker thinks in terms of where
