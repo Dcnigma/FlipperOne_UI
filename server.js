@@ -940,15 +940,60 @@ function getHdmiStatus() {
 
 // TV Media Box runtime dependencies → the package that provides each.
 // cec-ctl: CEC control (v4l-utils); edid-decode: refresh-rate parsing.
+// TV Media Box runtime dependencies → the package that provides each.
+// cec-ctl: CEC control (v4l-utils); edid-decode: refresh-rate parsing.
 var TVMB_DEPS = [
     { bin: 'cec-ctl',     pkg: 'v4l-utils' },
     { bin: 'edid-decode', pkg: 'edid-decode' }
 ];
+
+// ── pickCecDevice() ────────────────────────────────────────────
+// Pi 4 has TWO HDMI ports, each with its own /dev/cecN node.
+// Only the port wired to a TV reports a non-f.f.f.f Physical
+// Address. We probe each candidate, pick the first one with a
+// real PA, and cache it for the process lifetime. Re-detected
+// on every enableCec() call (in case the user replugged).
+var _cecDeviceCache = null;
+function pickCecDevice() {
+    if (_cecDeviceCache) return _cecDeviceCache;
+    var candidates = [];
+    try {
+        candidates = fs.readdirSync('/dev')
+            .filter(function(n) { return /^cec\d+$/.test(n); })
+            .map(function(n) { return '/dev/' + n; })
+            .sort();
+    } catch (e) {}
+    if (!candidates.length) return null;
+    for (var i = 0; i < candidates.length; i++) {
+        try {
+            var out = execSync('cec-ctl -d ' + candidates[i],
+                               { encoding: 'utf8', timeout: 3000 });
+            var pa = out.match(/Physical Address\s*:\s*([0-9a-fA-F.]+)/);
+            if (pa && pa[1].toLowerCase() !== 'f.f.f.f') {
+                _cecDeviceCache = candidates[i];
+                console.log('[cec] using ' + candidates[i] + ' (PA=' + pa[1] + ')');
+                return _cecDeviceCache;
+            }
+        } catch (e) {}
+    }
+    // No TV found anywhere — fall back to cec0 so error reporting
+    // still has something to point at. enableCec() will surface
+    // the "f.f.f.f" via the standard "not enabled" path.
+    _cecDeviceCache = candidates[0];
+    console.warn('[cec] no TV on any adapter; falling back to ' + _cecDeviceCache);
+    return _cecDeviceCache;
+}
+function resetCecDeviceCache() { _cecDeviceCache = null; }
+
 function missingDeps() {
     var missing = [];
+    var pathDirs = ['/usr/bin/', '/usr/local/bin/', '/bin/', '/usr/sbin/'];
     TVMB_DEPS.forEach(function(d) {
-        try { execSync('which ' + d.bin, { timeout: 2000 }); }
-        catch (e) { if (missing.indexOf(d.pkg) === -1) missing.push(d.pkg); }
+        var found = pathDirs.some(function(p) {
+            try { fs.accessSync(p + d.bin, fs.constants.X_OK); return true; }
+            catch (e) { return false; }
+        });
+        if (!found && missing.indexOf(d.pkg) === -1) missing.push(d.pkg);
     });
     return missing;
 }
@@ -1145,19 +1190,45 @@ function startPreset(presetName) {
 // it's configured as a playback device and live on the bus — which
 // also requires HDMI to be connected). All probes are best-effort.
 function getCecState() {
-    var state = { installed: false, cecDevice: false, enabled: false, physicalAddress: null, missing: [], depsOk: false };
+    var state = {
+        installed: false, cecDevice: false, enabled: false,
+        physicalAddress: null, device: null, kodiOwnsCec: false,
+        via: null, missing: [], depsOk: false
+    };
     state.missing = missingDeps();
     state.depsOk  = state.missing.length === 0;
-    try { execSync('which cec-ctl', { timeout: 2000 }); state.installed = true; } catch (e) {}
-    try { state.cecDevice = fs.existsSync('/dev/cec0'); } catch (e) {}
+    ['/usr/bin/cec-ctl', '/usr/local/bin/cec-ctl'].some(function(p) {
+        try { fs.accessSync(p, fs.constants.X_OK); state.installed = true; return true; }
+        catch (e) { return false; }
+    });
+    // Any /dev/cecN node counts as "present" — picker chooses
+    // the right one. Older code only checked cec0.
+    try {
+        state.cecDevice = fs.readdirSync('/dev').some(function(n) { return /^cec\d+$/.test(n); });
+    } catch (e) {}
     if (state.installed && state.cecDevice) {
+        var dev = pickCecDevice();
+        state.device = dev;
         try {
-            var out = execSync('cec-ctl -d /dev/cec0', { encoding: 'utf8', timeout: 3000 });
+            var out = execSync('cec-ctl -d ' + dev, { encoding: 'utf8', timeout: 3000 });
             var mask = out.match(/Logical Address Mask\s*:\s*(0x[0-9a-fA-F]+)/);
             if (mask && parseInt(mask[1], 16) !== 0) state.enabled = true;
             var pa = out.match(/Physical Address\s*:\s*([0-9a-fA-F.]+)/);
             if (pa) state.physicalAddress = pa[1];
-        } catch (e) {}
+        } catch (e) { /* EBUSY when Kodi has the device — fall through */ }
+    }
+    // If we appear "not enabled" but Kodi is running, it's
+    // because libCEC inside Kodi holds /dev/cecN exclusively.
+    // That's CEC working — just not via us. Report it truthfully
+    // so the UI can show "Kodi controlling CEC" instead of
+    // popping the install/enable modal.
+    if (!state.enabled) {
+        try {
+            execSync('pgrep -x kodi.bin', { stdio: 'ignore', timeout: 1000 });
+            state.kodiOwnsCec = true;
+            state.enabled    = true;
+            state.via        = 'kodi';
+        } catch (e) { /* kodi not running */ }
     }
     return state;
 }
@@ -1167,7 +1238,7 @@ function getCecState() {
 // doesn't reply (off / no CEC / not enabled).
 function getTvPower() {
     try {
-        var out = execSync('cec-ctl -d /dev/cec0 --to 0 --give-device-power-status 2>&1',
+        var out = execSync('cec-ctl -d ' + cecDev() + ' --to 0 --give-device-power-status 2>&1',
             { encoding: 'utf8', timeout: 4000 });
         var m = out.match(/pwr-state:\s*([a-z-]+)/i);
         if (m) return m[1];
@@ -1192,7 +1263,7 @@ function isTvPresent() {
 // and no other device claims it).
 function getActiveSource() {
     try {
-        var out = execSync('cec-ctl -d /dev/cec0 --request-active-source 2>&1',
+        var out = execSync('cec-ctl -d ' + cecDev() + ' --request-active-source 2>&1',
             { encoding: 'utf8', timeout: 3000 });
         var m = out.match(/phys-addr:\s*([0-9a-fA-F.]+)/);
         if (m) return m[1];
@@ -3157,6 +3228,12 @@ function restartAudioDriver() {
     }
 }
 
+
+// Resolve the active CEC adapter for the current request.
+// Picker is cached for the process lifetime; reset by
+// /api/cec/enable so a fresh HDMI plug is picked up.
+function cecDev() { return pickCecDevice() || '/dev/cec0'; }
+
 function readJsonBody(req, callback) {
     var body = '';
     req.on('data', function(chunk) { body += chunk; });
@@ -3165,6 +3242,7 @@ function readJsonBody(req, callback) {
         catch (e) { callback(e, null); }
     });
 }
+
 
 function serveStatic(req, res) {
     var urlPath = req.url.split('?')[0];
@@ -4009,15 +4087,27 @@ var server = http.createServer(function(req, res) {
     // as root, no sudo. Idempotent: re-running just re-claims. Returns
     // the resulting `enabled` so the client can confirm immediately.
     if (req.url === '/api/cec/enable' && req.method === 'POST') {
+        // Forget any cached adapter — user may have moved the HDMI
+        // cable between ports since startup.
+        resetCecDeviceCache();
+        var enDev = cecDev();
         var enOk = false, enOut = '';
         try {
-            enOut = execSync('cec-ctl -d /dev/cec0 --playback 2>&1', { encoding: 'utf8', timeout: 5000 });
+            enOut = execSync('cec-ctl -d ' + enDev + ' --playback --osd-name "RPi" 2>&1',
+                             { encoding: 'utf8', timeout: 5000 });
             enOk = true;
         } catch (e) {
             enOut = (e.stdout || '') + (e.stderr || '') + (e.message || '');
         }
+        var stAfter = getCecState();
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: enOk, enabled: getCecState().enabled, output: enOut.slice(-500) }));
+        res.end(JSON.stringify({
+            success:         enOk,
+            enabled:         stAfter.enabled,
+            device:          enDev,
+            physicalAddress: stAfter.physicalAddress,
+            output:          enOut.slice(-500)
+        }));
         return;
     }
     // ── /api/cec/start-tv ────────────────────────────────────────
@@ -4030,29 +4120,30 @@ var server = http.createServer(function(req, res) {
     //                                 hardcoded — it changes with the
     //                                 HDMI port we're plugged into.
     if (req.url === '/api/cec/start-tv' && req.method === 'POST') {
-        var st = getCecState();
-        if (!st.enabled) {
+            var st = getCecState();
+            if (!st.enabled) {
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: false, error: 'CEC not enabled' }));
+                return;
+            }
+            var tvOk = false, tvOut = '';
+            var tvDev = cecDev();
+            try {
+                tvOut += execSync('cec-ctl -d ' + tvDev + ' --to 0 --image-view-on 2>&1',
+                    { encoding: 'utf8', timeout: 5000 });
+                var pa = st.physicalAddress;
+                if (pa && /^[0-9a-fA-F.]+$/.test(pa) && pa !== 'f.f.f.f') {
+                    tvOut += execSync('cec-ctl -d ' + tvDev + ' --active-source phys-addr=' + pa + ' 2>&1',
+                        { encoding: 'utf8', timeout: 5000 });
+                }
+                tvOk = true;
+            } catch (e) {
+                tvOut += (e.stdout || '') + (e.stderr || '') + (e.message || '');
+            }
             res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ success: false, error: 'CEC not enabled' }));
+            res.end(JSON.stringify({ success: tvOk, physicalAddress: st.physicalAddress, output: tvOut.slice(-500) }));
             return;
         }
-        var tvOk = false, tvOut = '';
-        try {
-            tvOut += execSync('cec-ctl -d /dev/cec0 --to 0 --image-view-on 2>&1',
-                { encoding: 'utf8', timeout: 5000 });
-            var pa = st.physicalAddress;
-            if (pa && /^[0-9a-fA-F.]+$/.test(pa) && pa !== 'f.f.f.f') {
-                tvOut += execSync('cec-ctl -d /dev/cec0 --active-source phys-addr=' + pa + ' 2>&1',
-                    { encoding: 'utf8', timeout: 5000 });
-            }
-            tvOk = true;
-        } catch (e) {
-            tvOut += (e.stdout || '') + (e.stderr || '') + (e.message || '');
-        }
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: tvOk, physicalAddress: st.physicalAddress, output: tvOut.slice(-500) }));
-        return;
-    }
     // ── /api/cec/tv-off ──────────────────────────────────────────
     // Put the TV into standby via CEC: --to 0 --standby (0x36).
     if (req.url === '/api/cec/tv-off' && req.method === 'POST') {
@@ -4064,8 +4155,8 @@ var server = http.createServer(function(req, res) {
         }
         var offOk = false, offOut = '';
         try {
-            offOut = execSync('cec-ctl -d /dev/cec0 --to 0 --standby 2>&1',
-                { encoding: 'utf8', timeout: 5000 });
+          offOut = execSync('cec-ctl -d ' + cecDev() + ' --to 0 --standby 2>&1',
+              { encoding: 'utf8', timeout: 5000 });
             offOk = true;
         } catch (e) {
             offOut = (e.stdout || '') + (e.stderr || '') + (e.message || '');
