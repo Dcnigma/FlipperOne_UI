@@ -828,6 +828,73 @@ var TOUCH_DEVICE   = process.env.TOUCH_DEVICE   || null; // auto-detected at sta
 // "Playing" only for an actually-live stream.
 var radioPlaying = false;
 
+// ── Kodi JSON-RPC config ────────────────────────────────────────
+// Kodi's web server lives on :8080 by default. Auth is OFF in
+// this build (user has "Allow remote control via HTTP" ticked
+// with no username/password). KODI_HOST stays 127.0.0.1 — the
+// proxy is the only thing that talks to Kodi, and the UI talks
+// only to the proxy, so Kodi never has to be exposed to the LAN.
+var KODI_HOST = process.env.KODI_HOST || '127.0.0.1';
+var KODI_PORT = parseInt(process.env.KODI_PORT || '8080', 10);
+var KODI_USER = process.env.KODI_USER || '';     // '' = no auth
+var KODI_PASS = process.env.KODI_PASS || '';
+
+// Method allowlist — the proxy refuses anything not in here so a
+// rogue page on the LAN can't issue arbitrary Kodi RPCs. Extend
+// freely as the UI grows; the names are exactly what Kodi's
+// JSON-RPC reference uses.
+var KODI_ALLOWED = {
+    // Liveness
+    'JSONRPC.Ping':              true,
+    'JSONRPC.Version':           true,
+    // D-pad / OSD
+    'Input.Up':                  true,
+    'Input.Down':                true,
+    'Input.Left':                true,
+    'Input.Right':               true,
+    'Input.Select':              true,
+    'Input.Back':                true,
+    'Input.Home':                true,
+    'Input.ContextMenu':         true,
+    'Input.Info':                true,
+    'Input.ShowOSD':             true,
+    'Input.ShowPlayerProcessInfo': true,
+    'Input.ExecuteAction':       true,   // play/pause/stop/skip/etc.
+    'Input.SendText':            true,
+    // Playback
+    'Player.GetActivePlayers':   true,
+    'Player.GetItem':            true,
+    'Player.GetProperties':      true,
+    'Player.PlayPause':          true,
+    'Player.Stop':               true,
+    'Player.Seek':               true,
+    'Player.SetSpeed':           true,
+    'Player.GoTo':               true,
+    'Player.Open':               true,
+    // App-wide
+    'Application.GetProperties': true,
+    'Application.SetVolume':     true,
+    'Application.SetMute':       true,
+    'Application.Quit':          true,
+    // Windows / settings
+    'GUI.ActivateWindow':        true,
+    'GUI.ShowNotification':      true,
+    'GUI.SetFullscreen':         true,
+    // Library / files (read-only)
+    'VideoLibrary.GetMovies':    true,
+    'VideoLibrary.GetTVShows':   true,
+    'VideoLibrary.GetRecentlyAddedMovies': true,
+    'AudioLibrary.GetAlbums':    true,
+    'AudioLibrary.GetSongs':     true,
+    'Files.GetSources':          true,
+    'Files.GetDirectory':        true,
+    // System power
+    'System.Suspend':            true,
+    'System.Hibernate':          true,
+    'System.Shutdown':           true,
+    'System.Reboot':             true
+};
+
 // Extra sound entries that live outside SOUND_DIR — the device
 // has its stock list under /flipperone-testing/sound/audio_files
 // but we also want to expose project-bundled assets (e.g. the
@@ -4300,6 +4367,213 @@ var server = http.createServer(function(req, res) {
         res.end(JSON.stringify({ success: cecOk, output: cecOut.slice(-1000) }));
         return;
     }
+
+    // ── /api/kodi/rpc ───────────────────────────────────────────
+        // POST body: { method: "Input.Up", params?: { ... } }
+        // Proxies one JSON-RPC call to Kodi's HTTP endpoint. The UI
+        // never speaks to Kodi directly — credentials (when present)
+        // live in env vars on the server, the method allowlist lives
+        // in KODI_ALLOWED, and the response is forwarded verbatim so
+        // the client gets the real Kodi result/error shape.
+        if (req.url === '/api/kodi/rpc' && req.method === 'POST') {
+            readJsonBody(req, function(err, data) {
+                var method = data && data.method;
+                if (typeof method !== 'string' || !KODI_ALLOWED[method]) {
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({
+                        error: 'Method not allowed: ' + (method || '(none)')
+                    }));
+                    return;
+                }
+                var rpcBody = JSON.stringify({
+                    jsonrpc: '2.0',
+                    id:      Date.now() & 0x7fffffff,
+                    method:  method,
+                    params:  (data && data.params) || {}
+                });
+                var headers = {
+                    'Content-Type':   'application/json',
+                    'Content-Length': Buffer.byteLength(rpcBody)
+                };
+                if (KODI_USER || KODI_PASS) {
+                    headers['Authorization'] = 'Basic ' +
+                        Buffer.from(KODI_USER + ':' + KODI_PASS).toString('base64');
+                }
+                var kreq = http.request({
+                    hostname: KODI_HOST,
+                    port:     KODI_PORT,
+                    path:     '/jsonrpc',
+                    method:   'POST',
+                    headers:  headers,
+                    timeout:  5000
+                }, function(kres) {
+                    var chunks = '';
+                    kres.on('data', function(c) { chunks += c; });
+                    kres.on('end', function() {
+                        // Forward Kodi's status code + body unchanged.
+                        // Kodi uses 200 even for {"error":...} payloads,
+                        // which is fine — the client checks .error.
+                        res.writeHead(kres.statusCode || 502,
+                                      { 'Content-Type': 'application/json' });
+                        res.end(chunks);
+                    });
+                });
+                kreq.on('error', function(e) {
+                    // Typical causes: Kodi not running, web server off,
+                    // or wrong port. Don't echo internals — give the UI
+                    // a single clean string it can map to "Start Kodi
+                    // first" / "Check settings → services".
+                    res.writeHead(503, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({
+                        error:  'Kodi unreachable',
+                        detail: e.code || e.message
+                    }));
+                });
+                kreq.on('timeout', function() {
+                    kreq.destroy();
+                    // The 'error' handler above will fire with ECONNRESET.
+                });
+                kreq.write(rpcBody);
+                kreq.end();
+            });
+            return;
+        }
+
+        // ── /api/kodi/status ────────────────────────────────────────
+        // Quick liveness check for the scene to gate its UI on.
+        // Reports:
+        //   • reachable   — Kodi answers JSONRPC.Ping within 1 s
+        //   • playing     — true if any active player is reported
+        //   • volume      — 0..100 (null if not reachable)
+        //   • muted       — boolean
+        // Cheap enough to poll every 2 s while the scene is open.
+        if (req.url === '/api/kodi/status' && req.method === 'GET') {
+            var summary = { reachable: false, playing: false, volume: null, muted: null };
+            var pingBody = JSON.stringify({
+                jsonrpc: '2.0', id: 1, method: 'Application.GetProperties',
+                params:  { properties: ['volume', 'muted'] }
+            });
+            var headers = {
+                'Content-Type':   'application/json',
+                'Content-Length': Buffer.byteLength(pingBody)
+            };
+            if (KODI_USER || KODI_PASS) {
+                headers['Authorization'] = 'Basic ' +
+                    Buffer.from(KODI_USER + ':' + KODI_PASS).toString('base64');
+            }
+            var done = false;
+            var kreq = http.request({
+                hostname: KODI_HOST, port: KODI_PORT, path: '/jsonrpc',
+                method:   'POST', headers: headers, timeout: 1500
+            }, function(kres) {
+                var chunks = '';
+                kres.on('data', function(c) { chunks += c; });
+                kres.on('end', function() {
+                    try {
+                        var j = JSON.parse(chunks);
+                        if (j && j.result) {
+                            summary.reachable = true;
+                            summary.volume    = j.result.volume;
+                            summary.muted     = !!j.result.muted;
+                        }
+                    } catch (e) {}
+                    // Second call: any active players?
+                    var pBody = JSON.stringify({
+                        jsonrpc: '2.0', id: 2, method: 'Player.GetActivePlayers'
+                    });
+                    var pHdrs = Object.assign({}, headers, {
+                        'Content-Length': Buffer.byteLength(pBody)
+                    });
+                    var preq = http.request({
+                        hostname: KODI_HOST, port: KODI_PORT, path: '/jsonrpc',
+                        method:   'POST', headers: pHdrs, timeout: 1500
+                    }, function(pres) {
+                        var pchunks = '';
+                        pres.on('data', function(c) { pchunks += c; });
+                        pres.on('end', function() {
+                            try {
+                                var pj = JSON.parse(pchunks);
+                                summary.playing = !!(pj && pj.result && pj.result.length);
+                            } catch (e) {}
+                            if (!done) {
+                                done = true;
+                                res.writeHead(200, { 'Content-Type': 'application/json' });
+                                res.end(JSON.stringify(summary));
+                            }
+                        });
+                    });
+                    preq.on('error', function() {
+                        if (!done) {
+                            done = true;
+                            res.writeHead(200, { 'Content-Type': 'application/json' });
+                            res.end(JSON.stringify(summary));
+                        }
+                    });
+                    preq.write(pBody);
+                    preq.end();
+                });
+            });
+            kreq.on('error', function() {
+                if (!done) {
+                    done = true;
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify(summary));
+                }
+            });
+            kreq.on('timeout', function() { kreq.destroy(); });
+            kreq.write(pingBody);
+            kreq.end();
+            return;
+        }
+
+        // ── /api/kodi/wake-tv ───────────────────────────────────────
+        // Convenience endpoint: wake the TV via CEC (the one CEC trick
+        // that works on a partial-CEC display) AND launch Kodi.
+        // Returns success if EITHER the CEC wake or the Kodi launch
+        // worked — the UI shouldn't fail just because the TV doesn't
+        // ACK image-view-on but did actually wake.
+        if (req.url === '/api/kodi/wake-tv' && req.method === 'POST') {
+            var wakeOut = { cec: { tried: false, ok: false, msg: null },
+                            kodi:{ tried: false, ok: false, msg: null } };
+            // ① CEC fallback — try image-view-on if CEC is enabled
+            try {
+                var cs = getCecState();
+                if (cs.enabled) {
+                    wakeOut.cec.tried = true;
+                    execSync('cec-ctl -d ' + cecDev() +
+                             ' --to 0 --image-view-on 2>&1',
+                             { encoding: 'utf8', timeout: 4000 });
+                    if (cs.physicalAddress &&
+                        /^[0-9a-fA-F.]+$/.test(cs.physicalAddress) &&
+                        cs.physicalAddress !== 'f.f.f.f') {
+                        execSync('cec-ctl -d ' + cecDev() +
+                                 ' --active-source phys-addr=' +
+                                 cs.physicalAddress + ' 2>&1',
+                                 { encoding: 'utf8', timeout: 4000 });
+                    }
+                    wakeOut.cec.ok = true;
+                } else {
+                    wakeOut.cec.msg = 'CEC not enabled';
+                }
+            } catch (e) {
+                wakeOut.cec.msg = (e.message || '').slice(0, 200);
+            }
+            // ② Launch Kodi (uses the existing preset machinery so HDMI
+            //    extend + SDL_VIDEO_FULLSCREEN_DISPLAY are wired up).
+            try {
+                wakeOut.kodi.tried = true;
+                var sp = startPreset('Kodi TV');
+                wakeOut.kodi.ok  = !!(sp && sp.success);
+                wakeOut.kodi.msg = sp && sp.error ? sp.error : null;
+            } catch (e) {
+                wakeOut.kodi.msg = (e.message || '').slice(0, 200);
+            }
+            var anyOk = wakeOut.cec.ok || wakeOut.kodi.ok;
+            res.writeHead(anyOk ? 200 : 500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: anyOk, detail: wakeOut }));
+            return;
+        }
+
     // ── /api/tvmb/start ──────────────────────────────────────────
     // Spawn the binary for the requested preset (Kodi / weston / …)
     // and route its output to HDMI. Replaces any preset already
@@ -4350,6 +4624,100 @@ var server = http.createServer(function(req, res) {
         });
         return;
     }
+
+    // ── Kodi JSON-RPC config ────────────────────────────────────────
+    var KODI_HOST = process.env.KODI_HOST || '127.0.0.1';
+    var KODI_PORT = process.env.KODI_PORT || '8080';
+    var KODI_USER = process.env.KODI_USER || 'kodi';
+    var KODI_PASS = process.env.KODI_PASS || 'kodi';
+    // Allowlist — keep the proxy from being a generic Kodi RCE if
+    // anything else lands on the LAN. Add methods as the UI grows.
+    var KODI_ALLOWED = {
+        'JSONRPC.Ping':              true,
+        'Input.Up':                  true,
+        'Input.Down':                true,
+        'Input.Left':                true,
+        'Input.Right':               true,
+        'Input.Select':              true,
+        'Input.Back':                true,
+        'Input.Home':                true,
+        'Input.ContextMenu':         true,
+        'Input.Info':                true,
+        'Input.ShowOSD':             true,
+        'Input.ExecuteAction':       true,   // for play/pause/stop/seek
+        'Player.GetActivePlayers':   true,
+        'Player.GetItem':            true,
+        'Player.GetProperties':      true,
+        'Player.PlayPause':          true,
+        'Player.Stop':               true,
+        'Player.Seek':               true,
+        'Player.SetSpeed':           true,
+        'Application.GetProperties': true,
+        'Application.SetVolume':     true,
+        'Application.SetMute':       true,
+        'Application.Quit':          true,
+        'System.Shutdown':           true,
+        'System.Suspend':            true,
+        'GUI.ActivateWindow':        true,
+        'GUI.ShowNotification':      true,
+        'VideoLibrary.GetMovies':    true,
+        'Files.GetSources':          true
+    };
+
+    // ── /api/kodi/rpc ───────────────────────────────────────────────
+    // Body: { method, params? }. Proxies one JSON-RPC call to Kodi's
+    // :8080 HTTP server and returns the result verbatim. Auth lives
+    // in the server's env, not the browser — the UI just picks from
+    // the KODI_ALLOWED whitelist.
+    if (req.url === '/api/kodi/rpc' && req.method === 'POST') {
+        readJsonBody(req, function(err, data) {
+            var method = data && data.method;
+            if (typeof method !== 'string' || !KODI_ALLOWED[method]) {
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Method not allowed: ' + method }));
+                return;
+            }
+            var body = JSON.stringify({
+                jsonrpc: '2.0',
+                id:      1,
+                method:  method,
+                params:  data.params || {}
+            });
+            var opts = {
+                hostname: KODI_HOST,
+                port:     KODI_PORT,
+                path:     '/jsonrpc',
+                method:   'POST',
+                headers: {
+                    'Content-Type':   'application/json',
+                    'Content-Length': Buffer.byteLength(body),
+                    'Authorization':  'Basic ' +
+                        Buffer.from(KODI_USER + ':' + KODI_PASS).toString('base64')
+                },
+                timeout: 5000
+            };
+            var kreq = http.request(opts, function(kres) {
+                var chunks = '';
+                kres.on('data', function(c) { chunks += c; });
+                kres.on('end', function() {
+                    res.writeHead(kres.statusCode, { 'Content-Type': 'application/json' });
+                    res.end(chunks);
+                });
+            });
+            kreq.on('error', function(e) {
+                // Most common case: Kodi isn't running, or the web
+                // server is off. Surface a clear message so the UI
+                // can prompt "Start Kodi first".
+                res.writeHead(503, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Kodi unreachable: ' + e.message }));
+            });
+            kreq.on('timeout', function() { kreq.destroy(); });
+            kreq.write(body);
+            kreq.end();
+        });
+        return;
+    }
+
     // ── /api/tvmb/status ─────────────────────────────────────────
     // { running, preset } — tells the client which preset (if any)
     // is currently spawned. Survives across HTTP requests because

@@ -299,6 +299,18 @@ var TVMediaBoxScene = (function() {
         return this._tvStatusLabel() === 'TV: Sleep';
     };
 
+    function kodiRpc(method, params, cb) {
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '/api/kodi/rpc');
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.onload = function() {
+            try { cb && cb(JSON.parse(xhr.responseText || '{}')); }
+            catch (e) { cb && cb({ error: 'Bad response' }); }
+        };
+        xhr.onerror = function() { cb && cb({ error: 'Network error' }); };
+        xhr.send(JSON.stringify({ method: method, params: params || {} }));
+    }
+
     // Wake button (B / run): wake the TV and switch it to our HDMI
     // input — the same CEC path (image-view-on + active-source) the
     // old Start TV used.
