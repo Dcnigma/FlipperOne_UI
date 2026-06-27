@@ -1667,6 +1667,65 @@ function setExtlinuxDefault(target) {
     }
 }
 
+
+// ── resolveStreamUrl(url, cb) ───────────────────────────────────
+// Many "radio URLs" are really pointers to a PLS / M3U playlist
+// (or an HLS manifest). mpg123 will fetch the playlist, find no
+// MP3 frames, and exit code=0 within a second — which is the
+// "code=0 signal=null right after spawn" footprint we just saw.
+//
+// This walks redirects, peeks at Content-Type, and if it's one
+// of the playlist formats, parses out the first http(s) URL
+// inside and returns *that*. Falls back to the original URL if
+// it can't figure things out — mpg123 will still produce a
+// useful error in that case.
+function resolveStreamUrl(url, cb) {
+    // Use curl — already installed, handles HTTPS + redirects in
+    // one call without pulling node-fetch as a dependency.
+    var cmd = 'curl -sIL --max-time 5 ' +
+              "-A 'Mozilla/5.0 (compatible; flipctl/1.0)' " +
+              "'" + url.replace(/'/g, "'\\''") + "'";
+    exec(cmd, { timeout: 6000 }, function(err, stdout) {
+        if (err) return cb(null, url);                       // network problem — let mpg123 surface it
+        // Take the LAST set of headers (the end of redirect chain).
+        var blocks = stdout.split(/\r?\n\r?\n/).filter(Boolean);
+        var last   = blocks[blocks.length - 1] || '';
+        var ctMatch = last.match(/^content-type:\s*([^\s;]+)/im);
+        var ct = ctMatch ? ctMatch[1].toLowerCase() : '';
+        // Find the final URL after redirects, if curl reported one.
+        var finalUrl = url;
+        var locs = stdout.match(/^location:\s*(\S+)/gim);
+        if (locs && locs.length) finalUrl = locs[locs.length - 1]
+                                              .replace(/^location:\s*/i, '').trim();
+
+        // Direct MP3 / AAC / audio bytes — done.
+        if (/^audio\/(mpeg|mp3|aac|aacp)$/.test(ct) || /^application\/octet-stream$/.test(ct)) {
+            return cb(null, finalUrl);
+        }
+        // HLS — mpg123 can't play these. Tell the caller.
+        if (/mpegurl|hls/i.test(ct)) {
+            return cb(new Error('HLS streams not supported by mpg123 (use ffplay)'), null);
+        }
+        // PLS or M3U — fetch the body and extract first URL.
+        if (/scpls|x-mpegurl|audio\/x-mpegurl|application\/pls/i.test(ct) ||
+            /\.(pls|m3u8?)(\?|$)/i.test(finalUrl)) {
+            var bodyCmd = "curl -sL --max-time 5 -A 'Mozilla/5.0' '" +
+                          finalUrl.replace(/'/g, "'\\''") + "'";
+            exec(bodyCmd, { timeout: 6000 }, function(err2, body) {
+                if (err2 || !body) return cb(null, finalUrl);
+                // PLS:  File1=http://...
+                // M3U:  bare http(s) URL lines
+                var m = body.match(/^\s*File\d+\s*=\s*(https?:\/\/\S+)/im)
+                     || body.match(/^(https?:\/\/\S+)/im);
+                cb(null, m ? m[1].trim() : finalUrl);
+            });
+            return;
+        }
+        // Unknown content-type — try as-is and let mpg123 complain.
+        cb(null, finalUrl);
+    });
+}
+
 // ── playRadioStream(url) ────────────────────────────────────────
 // Hardened Pi/Kali version. Key differences vs. the original
 // Flipper code:
@@ -1685,28 +1744,43 @@ function playRadioStream(url) {
     if (!url || typeof url !== 'string') {
         return { success: false, error: 'Missing URL' };
     }
-    // Reuse the existing one-thing-at-a-time invariant.
     try { stopSound(); } catch (e) {}
-
-    // Defensive: stopSound() should have done this, but if it
-    // silently failed (permission to kill missing, etc.) we must
-    // not orphan a child or report the wrong playing-state.
     if (audioChild) {
         try { audioChild.kill('SIGKILL'); } catch (e) {}
         audioChild = null;
     }
     radioPlaying = false;
 
+    // Resolve playlists/redirects to a real MP3 URL up-front so
+    // mpg123 doesn't fetch a PLS, find no frames, and exit code=0.
+    resolveStreamUrl(url, function(err, realUrl) {
+        if (err) {
+            console.error('[radio] resolve failed:', err.message);
+            lastRadioErr = err.message;
+            return;       // /api/radio/status will report playing:false + lastError
+        }
+        _spawnMpg123(realUrl, url);
+    });
+    return { success: true };       // optimistic — status endpoint is the truth
+}
+
+// Split the spawn into its own function so resolveStreamUrl can
+// call it asynchronously without nesting half the file.
+function _spawnMpg123(realUrl, originalUrl) {
     var card = getBcm2835Card();
     var dev  = 'plughw:' + card + ',0';
     var args = [
-        '-a', dev,           // ALSA device (resolved live)
-        '-q',                // quiet — only errors on stderr
-        '--no-control',      // don't try to read keys from stdin
-        '-b', '8192',        // 8 MB ring buffer — smooth out network jitter
-        url
+        '-a', dev,
+        '-q',
+        '--no-control',
+        '-b', '8192',
+        '-u', 'Mozilla/5.0 (compatible; flipctl/1.0)',  // some stations 403 on a plain UA
+        realUrl
     ];
     console.log('[radio] mpg123', args.join(' '));
+    if (realUrl !== originalUrl) {
+        console.log('[radio] resolved playlist:', originalUrl, '→', realUrl);
+    }
 
     try {
         audioChild = spawn('mpg123', args, {
@@ -1717,44 +1791,41 @@ function playRadioStream(url) {
         });
     } catch (e) {
         console.error('[radio] spawn failed:', e.message);
-        audioChild  = null;
+        lastRadioErr = 'spawn failed: ' + e.message;
+        audioChild = null;
         radioPlaying = false;
-        return { success: false, error: 'spawn failed: ' + e.message };
+        return;
     }
-
     radioPlaying = true;
-    radioUrl     = url;
-    lastRadioErr = '';                       // reset error buffer
+    radioUrl     = originalUrl;
+    lastRadioErr = '';
 
-    audioChild.stdout.on('data', function(buf) {
-        // mpg123 -q is silent on stdout in steady state; only
-        // banner/diagnostic lines arrive here. Keep them for
-        // post-mortem debugging.
-        var s = buf.toString();
-        if (s.trim()) console.log('[radio:out]', s.trim());
+    audioChild.stdout.on('data', function(b) {
+        var s = b.toString().trim();
+        if (s) console.log('[radio:out]', s);
     });
-    audioChild.stderr.on('data', function(buf) {
-        var s = buf.toString();
+    audioChild.stderr.on('data', function(b) {
+        var s = b.toString();
         lastRadioErr = (lastRadioErr + s).slice(-4096);
-        // Trim trailing newline before logging so the prefix
-        // lines up — mpg123 ends most messages with \n.
         console.error('[radio:err]', s.replace(/\n+$/, ''));
     });
     audioChild.on('exit', function(code, signal) {
         console.log('[radio] mpg123 exited code=' + code + ' signal=' + signal);
+        // Quick clean-exit on a live stream → almost certainly a
+        // playlist we failed to detect, or the source closed us
+        // (often a transient HTTP 5xx). Surface it via lastError.
+        if (signal === null && code === 0 && !lastRadioErr) {
+            lastRadioErr = 'Stream ended immediately (URL may be a playlist or HLS manifest)';
+        }
         radioPlaying = false;
-        audioChild   = null;
-        // radioUrl is kept so /api/radio/status can still report
-        // what was last attempted; the client uses playing:false
-        // as the definitive "not running" signal.
+        audioChild = null;
     });
     audioChild.on('error', function(err) {
         console.error('[radio] child error:', err.message);
+        lastRadioErr = err.message;
         radioPlaying = false;
-        audioChild   = null;
+        audioChild = null;
     });
-
-    return { success: true };
 }
 
 // ── Voice recorder ───────────────────────────────────────────────
