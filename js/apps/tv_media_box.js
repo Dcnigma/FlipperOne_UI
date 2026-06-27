@@ -298,19 +298,51 @@ var TVMediaBoxScene = (function() {
     TVMediaBoxScene.prototype._isTvAsleep = function() {
         return this._tvStatusLabel() === 'TV: Sleep';
     };
-
+    // ── kodiRpc(method, params, cb) ─────────────────────────────────
+    // Talks to /api/kodi/rpc on the local server, which forwards the
+    // call to Kodi's JSON-RPC endpoint (127.0.0.1:8080). The proxy
+    // enforces an allowlist; unknown methods 400. Failures only log
+    // — a missed press never throws into the scene.
     function kodiRpc(method, params, cb) {
-        var xhr = new XMLHttpRequest();
-        xhr.open('POST', '/api/kodi/rpc');
-        xhr.setRequestHeader('Content-Type', 'application/json');
-        xhr.timeout = 5000;
-        xhr.onload = function() {
-            try { cb && cb(JSON.parse(xhr.responseText || '{}')); }
-            catch (e) { cb && cb({ error: 'Bad response' }); }
-        };
-        xhr.onerror   = function() { cb && cb({ error: 'Network error' }); };
-        xhr.ontimeout = function() { cb && cb({ error: 'Timeout' }); };
-        xhr.send(JSON.stringify({ method: method, params: params || {} }));
+        try {
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/kodi/rpc');
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.timeout = 4000;
+            xhr.onload = function () {
+                if (xhr.status >= 400) {
+                    console.warn('[kodi]', method, 'HTTP', xhr.status,
+                                 xhr.responseText.slice(0, 200));
+                }
+                if (typeof cb === 'function') {
+                    try { cb(JSON.parse(xhr.responseText || '{}')); }
+                    catch (e) { cb({ error: 'Bad response' }); }
+                }
+            };
+            xhr.onerror   = function () { console.warn('[kodi]', method, 'net err'); };
+            xhr.ontimeout = function () { console.warn('[kodi]', method, 'timeout'); };
+            xhr.send(JSON.stringify({ method: method, params: params || {} }));
+        } catch (e) { console.warn('[kodi] threw', e && e.message); }
+    }
+
+    // Map d-pad directions to Kodi's Input.* methods. 'ok' / 'select'
+    // / 'center' all become Input.Select; the rest are obvious.
+    var KODI_DPAD = {
+        up:     'Input.Up',
+        down:   'Input.Down',
+        left:   'Input.Left',
+        right:  'Input.Right',
+        ok:     'Input.Select',
+        select: 'Input.Select',
+        center: 'Input.Select'
+    };
+
+    // ── Back-compat aliases ─────────────────────────────────────────
+    // Older scene code may still call kodiSend('Input.Down') — keep
+    // those callsites working so we don't have to chase every button
+    // binding individually. Maps to the same proxy.
+    function kodiSend(method, params, cb) {
+        return kodiRpc(method, params, cb);
     }
 
     // Wake button (B / run): wake the TV and switch it to our HDMI
@@ -428,7 +460,12 @@ var TVMediaBoxScene = (function() {
     // Flash a d-pad press overlay (auto-repeat while held keeps it lit).
     TVMediaBoxScene.prototype._flashPress = function(action) {
         var self = this;
-        this._pressedDir = action;
+        // Bridge to Kodi: every d-pad press fires the matching
+                // Input.* JSON-RPC call. `action` matches KODI_DPAD keys
+                // ('up'/'down'/'left'/'right'/'ok') — anything else (e.g.
+                // a hypothetical 'long-press') quietly no-ops.
+                if (KODI_DPAD[action]) kodiRpc(KODI_DPAD[action]);
+                this._pressedDir = action;
         if (this._pressTimer) clearTimeout(this._pressTimer);
         this._pressTimer = setTimeout(function() {
             self._pressedDir = null;
@@ -442,7 +479,9 @@ var TVMediaBoxScene = (function() {
     // given, fires once the flash ends (e.g. close the popup).
     TVMediaBoxScene.prototype._flashBack = function(onDone) {
         var self = this;
-        this._backPressed = true;
+        // Bridge to Kodi: back-button press → Input.Back.
+                kodiRpc('Input.Back');
+                this._backPressed = true;
         if (this._backTimer) clearTimeout(this._backTimer);
         this._backTimer = setTimeout(function() {
             self._backPressed = false;
