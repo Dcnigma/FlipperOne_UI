@@ -964,15 +964,126 @@ var tvmbPresetName  = null;   // 'Kodi TV' | 'Linux Desktop' | null
 // `sh -c` so we can pipe through `su` and pick up the user's
 // XDG/runtime dirs.
 // All children inherit DISPLAY/XAUTHORITY so they land on the DSI-1 X session.
+// All children inherit DISPLAY/XAUTHORITY so they land on the
+// X session running on DSI-1.
 function asUserX(cmd) {
     return "su - " + MEDIA_USER +
            " -c 'DISPLAY=" + X_DISPLAY +
            " XAUTHORITY=" + X_AUTHORITY + " " + cmd + "'";
 }
 
+// Helper: run an xrandr/X command AS the desktop user (X11 won't
+// accept root client connections without xhost trickery). Returns
+// stdout, or '' on failure. Synchronous — we only call it from
+// Kodi start/stop so a 2 s blip is fine.
+function xUserCmd(cmd) {
+    try {
+        return execSync(asUserX(cmd), { encoding: 'utf8', timeout: 5000 });
+    } catch (e) {
+        console.warn('[xrandr] ' + cmd + ' failed: ' + (e.message || e));
+        return '';
+    }
+}
+
+// Detect DSI-1 + HDMI output names from xrandr. RPi/Kali sometimes
+// reports HDMI-A-1 and sometimes HDMI-1; DSI is usually DSI-1
+// under vc4-kms-v3d. Falls back to first connected non-DSI as HDMI.
+function detectXOutputs() {
+    var out = { dsi: null, hdmi: null, hdmiConnected: false };
+    var dump = xUserCmd('xrandr --query');
+    if (!dump) return out;
+    // Lines like:
+    //   DSI-1 connected primary 1024x600+0+0 ...
+    //   HDMI-1 connected 1920x1080+1024+0 ...
+    //   HDMI-A-1 disconnected (normal left ...
+    var lines = dump.split('\n');
+    // Two-pass so we always prefer a *connected* HDMI over a stale
+    // disconnected sibling. RPi/Kali commonly exposes HDMI-1 and
+    // HDMI-2 even when only one is wired (depending on which mini-
+    // HDMI port you used). Picking the first-seen would land on
+    // the dead one and fail with "HDMI cable not connected".
+    for (var i = 0; i < lines.length; i++) {
+        var m = lines[i].match(/^(\S+)\s+(connected|disconnected)\b/);
+        if (!m) continue;
+        var name = m[1], state = m[2];
+        if (/^DSI/i.test(name) && !out.dsi) out.dsi = name;
+        // Pass 1: take the first CONNECTED HDMI we find, beats everything.
+        if (/^HDMI/i.test(name) && state === 'connected' && !out.hdmiConnected) {
+            out.hdmi = name;
+            out.hdmiConnected = true;
+        }
+    }
+    // Pass 2: if nothing connected, remember a disconnected HDMI name
+    // anyway so the caller can return a useful "cable not connected"
+    // error rather than "no HDMI output found".
+    if (!out.hdmi) {
+        for (var j = 0; j < lines.length; j++) {
+            var m2 = lines[j].match(/^(HDMI\S*)\s+disconnected\b/i);
+            if (m2) { out.hdmi = m2[1]; break; }
+        }
+    }
+
+// Bring up HDMI as an extended display to the right of DSI-1,
+// keeping DSI-1 as primary. Idempotent — safe to call repeatedly.
+// Returns the parsed HDMI geometry (W,H,X,Y) so the launcher can
+// position Kodi exactly onto it.
+function enableHdmiExtended() {
+    var io = detectXOutputs();
+    if (!io.dsi)  return { ok: false, error: 'No DSI-1 output found' };
+    if (!io.hdmi) return { ok: false, error: 'No HDMI output found' };
+    if (!io.hdmiConnected) {
+        return { ok: false, error: 'HDMI cable not connected' };
+    }
+    // Set DSI primary at native res; HDMI auto-mode, extended right.
+    // --auto picks the EDID-preferred mode; if your TV is fussy you
+    // can swap that for a hardcoded --mode 1920x1080.
+    xUserCmd('xrandr --output ' + io.dsi  + ' --primary --auto ' +
+             '--output ' + io.hdmi + ' --auto --right-of ' + io.dsi);
+    // Re-read the geometry so the caller has authoritative numbers.
+    var dump = xUserCmd('xrandr --query');
+    var re   = new RegExp('^' + io.hdmi + '\\s+connected\\s+(?:primary\\s+)?(\\d+)x(\\d+)\\+(\\d+)\\+(\\d+)', 'm');
+    var m    = dump.match(re);
+    if (!m) return { ok: true, hdmi: io.hdmi, dsi: io.dsi, geom: null };
+    return {
+        ok:   true,
+        dsi:  io.dsi,
+        hdmi: io.hdmi,
+        geom: { w: +m[1], h: +m[2], x: +m[3], y: +m[4] }
+    };
+}
+
+// Drop HDMI back off, leaving only DSI-1 active. Called from
+// stopPreset() so closing Kodi returns you to your original
+// "Only DSI-1" layout automatically.
+function disableHdmiExtended() {
+    var io = detectXOutputs();
+    if (!io.hdmi) return;
+    xUserCmd('xrandr --output ' + io.hdmi + ' --off' +
+             (io.dsi ? ' --output ' + io.dsi + ' --primary --auto' : ''));
+}
+
+// Compose a shell command that:
+//   1. Forces the HDMI screen on (extended right of DSI-1).
+//   2. Tells SDL (Kodi's video backend) to fullscreen on display
+//      index 1 (= HDMI; DSI-1 is index 0 as the primary).
+//   3. Launches Kodi.
+//   4. After Kodi exits, kicks HDMI back off so DSI-1 is alone again.
+// Wrapped in `bash -c` so the `&&`/`||` chain survives `su -c`.
+//
+// We don't use `kodi-standalone` here because that variant tries to
+// own the whole graphics stack (it's meant for X-less / DRM boots);
+// regular `kodi` running under the existing Xfce X session is what
+// you want when DSI-1 is hosting your control UI.
+function buildKodiOnHdmiCmd() {
+    return 'bash -c "'
+        + 'export SDL_VIDEO_FULLSCREEN_DISPLAY=1; '   // 1 = secondary monitor
+        + 'export SDL_VIDEO_FULLSCREEN_HEAD=1; '      // legacy SDL fallback
+        + 'kodi --windowing=x11 --standalone=false; '
+        + 'true"';
+}
+
 var TVMB_PRESET_CMD = {
-    'Kodi TV':            asUserX('kodi'),
-    'Kodi (standalone)':  asUserX('kodi-standalone'),
+    'Kodi TV':            asUserX(buildKodiOnHdmiCmd()),
     'On-screen Keyboard': asUserX('onboard &'),
     'Xfce Desktop':       asUserX('startxfce4')   // harmless if already running
 };
@@ -982,16 +1093,27 @@ function stopPreset() {
         tvmbPresetChild = null;
         tvmbPresetName  = null;
     }
-    // The tracked handle can't reach Kodi once `su - login` detaches it
-    // into its own session, so reap by process NAME with killall. The
-    // names match comm exactly — `kodi` (the launcher) and `kodi.bin`
-    // (the binary) — never a bystander that merely mentions "kodi" in
-    // its arguments (an editor, a `grep kodi`). SIGTERM (killall's
-    // default) lets Kodi shut down cleanly and leaves no core dump, so
-    // /usr/bin/kodi's crash-restart loop won't respawn it.
     try { execSync('killall kodi.bin kodi', { timeout: 2000 }); } catch (e) {}
+    // Drop HDMI back off so DSI-1 is alone again, matching the
+    // "Only DSI-1" state you picked at boot. Soft-fails if HDMI
+    // wasn't enabled in the first place.
+    try { disableHdmiExtended(); } catch (e) {}
 }
+
+
 function startPreset(presetName) {
+    // Auto-prep HDMI for the Kodi presets only. Other presets
+    // (onboard, xfce) run on DSI-1 and don't need HDMI on.
+    if (presetName === 'Kodi TV' || presetName === 'Kodi (standalone)') {
+        var hdmi = enableHdmiExtended();
+        if (!hdmi.ok) {
+            return { success: false, error: 'HDMI setup: ' + hdmi.error };
+        }
+        console.log('[tvmb] HDMI ready at ' + hdmi.hdmi +
+                    (hdmi.geom ? ' ' + hdmi.geom.w + 'x' + hdmi.geom.h +
+                                 ' @ ' + hdmi.geom.x + ',' + hdmi.geom.y : ''));
+    }
+
     var cmd = TVMB_PRESET_CMD[presetName];
     if (!cmd) return { success: false, error: 'Unknown / unsupported preset: ' + presetName };
     stopPreset();
