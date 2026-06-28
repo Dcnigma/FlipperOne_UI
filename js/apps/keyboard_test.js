@@ -254,8 +254,8 @@ var TextInputScreen = (function() {
         var TAB_BTN_X = 52;
         var SCREEN_W  = 256;
         var SCREEN_H  = 144;
-        var tabBtnY   = SCREEN_H - 2 - TAB_BTN_H;
-        var BACKSPACE_BTN_X = SCREEN_W - 52 - TAB_BTN_W;
+        var tabBtnY   = SCREEN_H - TAB_BTN_H;
+        var BACKSPACE_BTN_X = SCREEN_W - 50 - TAB_BTN_W;
         this._123Btn       = new UI.NumericTabButton('123', TAB_BTN_X, tabBtnY, TAB_BTN_W, 'edit', function() { self._toggleLayout(); });
         this._backspaceBtn = new UI.IconTabButton(Icons.backspace, BACKSPACE_BTN_X, tabBtnY, TAB_BTN_W, 'del', function() {
             if (self.keyboard && self.keyboard.onChar) self.keyboard.onChar('\b');

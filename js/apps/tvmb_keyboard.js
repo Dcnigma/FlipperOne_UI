@@ -284,7 +284,7 @@ var TVMediaKeyboard = (function() {
         // previous `SCREEN_H - 2 - TAB_BTN_H` left a 2-px gap at the
         // bottom that read as "tabs floating above the bar."
         var tabBtnY   = SCREEN_H - TAB_BTN_H;
-        var BACKSPACE_BTN_X = SCREEN_W - 52 - TAB_BTN_W;
+        var BACKSPACE_BTN_X = SCREEN_W - 50 - TAB_BTN_W;
         this._123Btn       = new UI.NumericTabButton('123', TAB_BTN_X, tabBtnY, TAB_BTN_W, 'edit', function() { self._toggleLayout(); });
         this._backspaceBtn = new UI.IconTabButton(Icons.backspace, BACKSPACE_BTN_X, tabBtnY, TAB_BTN_W, 'del', function() {
             if (self.keyboard && self.keyboard.onChar) self.keyboard.onChar('\b');
