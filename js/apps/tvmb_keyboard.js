@@ -67,8 +67,8 @@ var TVMediaKeyboard = (function() {
     // Touchpad glyph positions. Default = left (over the flipper
     // logo); PTT slides it right to TOUCHPAD_X_FWD and turns on the
     // mouse (touchpad) forwarder.
-    var TOUCHPAD_X_LEFT = 1.00;
-    var TOUCHPAD_X_FWD  = 0.35;
+    var TOUCHPAD_X_LEFT = 70;
+    var TOUCHPAD_X_FWD  = 137;
     var TOUCHPAD_Y      = 23;
     // Brightness value (0=black..63=white) at/below which a touchpad
     // pixel is the near-black outline (kept). Brighter non-white pixels
