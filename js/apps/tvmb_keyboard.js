@@ -279,7 +279,11 @@ var TVMediaKeyboard = (function() {
         var TAB_BTN_X = 52;
         var SCREEN_W  = 256;
         var SCREEN_H  = 144;
-        var tabBtnY   = SCREEN_H - 2 - TAB_BTN_H;
+        // Flush with screen bottom — same anchoring as Cancel / Done.
+        // (this.h - BTN_H = 130 for the standard 14-px button). The
+        // previous `SCREEN_H - 2 - TAB_BTN_H` left a 2-px gap at the
+        // bottom that read as "tabs floating above the bar."
+        var tabBtnY   = SCREEN_H - TAB_BTN_H;
         var BACKSPACE_BTN_X = SCREEN_W - 52 - TAB_BTN_W;
         this._123Btn       = new UI.NumericTabButton('123', TAB_BTN_X, tabBtnY, TAB_BTN_W, 'edit', function() { self._toggleLayout(); });
         this._backspaceBtn = new UI.IconTabButton(Icons.backspace, BACKSPACE_BTN_X, tabBtnY, TAB_BTN_W, 'del', function() {
