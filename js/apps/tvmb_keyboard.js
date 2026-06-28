@@ -371,7 +371,9 @@ var TVMediaKeyboard = (function() {
     };
 
     TVMediaKeyboard.prototype.exit = function() {
-        canvas._kbChrome = null;
+
+          canvas._kbChrome = null;
+
         if (this._blinkTimer) {
             clearInterval(this._blinkTimer);
             this._blinkTimer = null;
