@@ -298,6 +298,8 @@ var TVMediaBoxScene = (function() {
     TVMediaBoxScene.prototype._isTvAsleep = function() {
         return this._tvStatusLabel() === 'TV: Sleep';
     };
+
+    
     // ── kodiRpc(method, params, cb) ─────────────────────────────────
     // Talks to /api/kodi/rpc on the local server, which forwards the
     // call to Kodi's JSON-RPC endpoint (127.0.0.1:8080). The proxy
