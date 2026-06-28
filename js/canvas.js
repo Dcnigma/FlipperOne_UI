@@ -26,7 +26,16 @@ var FlipCanvas = (function() {
     var LOGICAL_W = 256;
     var LOGICAL_H = 144;
     var LOGICAL_SCALE = PHYS_W / LOGICAL_W; // 4 — must stay an integer
-    var LETTERBOX_Y = Math.round((PHYS_H - LOGICAL_H * LOGICAL_SCALE) / 2); // 12
+
+    // Push the whole logical canvas DOWN against the physical bottom
+    // so anything anchored at logical y=144 (bottom-anchored buttons
+    // like the keyboard's 123/backspace tabs, or the Cancel/Done bar)
+    // lands flush with the panel edge. The remaining 24 px of slack
+    // (PHYS_H - LOGICAL_H * LOGICAL_SCALE) accumulates ABOVE the
+    // logical content, under the opaque status bar at y=0..N, where
+    // it's invisible.
+      var LETTERBOX_Y = PHYS_H - LOGICAL_H * LOGICAL_SCALE;  // 24
+//    var LETTERBOX_Y = Math.round((PHYS_H - LOGICAL_H * LOGICAL_SCALE) / 2); // 12
 
     function FlipCanvas(canvasEl) {
         this.el = canvasEl;
@@ -343,7 +352,7 @@ var FlipCanvas = (function() {
         this.ctx.fillRect(x + Math.floor((w - OVERLINE_W) / 2),
             y - 1, OVERLINE_W, 1);
     };
-    
+
     // Left button — flush with left screen edge, only top-right corner rounded.
     // Optional `icon` renders to the left of the label; the icon+text
     // pair is centred together inside the button.
