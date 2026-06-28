@@ -228,75 +228,64 @@ var FlipCanvas = (function() {
         }
     };
 
-    // Numeric-layout tab button. Looks like a middle app-defined
-    // button rotated 180° — top corners are square (radius 0)
-    // and the bottom corners are rounded with r=4. No top stroke;
-    // the side + bottom strokes are the same light gray
-    // (#824704) that the keyboard-key frames use, so the tab
-    // reads as part of the same chrome family. Caller passes an
-    // absolute (x, y) because this button isn't slot-positioned
-    // like MiddleButton.
+    // Numeric tab button — MIRROR variant: rounded TOP corners
+    // (r=4), square BOTTOM, no bottom stroke. Same shape family as
+    // drawLeftButton / drawRightButton so when the tab sits flush
+    // with the screen bottom the chrome reads as "ascending from
+    // the bottom edge" rather than "hanging from the keyboard".
+    // Light-gray (#824704) side + top strokes keep it visually
+    // linked to the keyboard chrome family.
     FlipCanvas.prototype.drawNumericTabButton = function(text, x, y, w, pressed, disabled) {
         var h = BTN_H;
         var c = disabled ? { bg: '#ccc', fg: '#c48021' } : _btnColors(pressed);
         var stroke = '#824704';
         this.ctx.fillStyle = c.bg;
-        // Fill: full-width interior from the top edge down to
-        // where the bottom curve starts, then step in for each
-        // row of the rounded corner. No top-stroke means row 0
-        // is bg — the interior runs all the way up.
-        this.ctx.fillRect(x,     y,         w,     h - 3);
-        this.ctx.fillRect(x + 1, y + h - 3, w - 2, 1);
-        this.ctx.fillRect(x + 2, y + h - 2, w - 4, 1);
-        this.ctx.fillRect(x + 3, y + h - 1, w - 6, 1);
+        // Fill: rounded TOP (r=4 step), then full-width down to bottom.
+        this.ctx.fillRect(x + 3, y,     w - 6, 1);            // Row 0: 4px from edges
+        this.ctx.fillRect(x + 2, y + 1, w - 4, 1);            // Row 1: 3px from edges
+        this.ctx.fillRect(x + 1, y + 2, w - 2, 1);            // Row 2: 2px from edges
+        this.ctx.fillRect(x,     y + 3, w,     h - 3);        // Rows 3..h-1: full width
 
-        // Stroke on top of the fill, in the light-gray frame
-        // colour used by the keyboard keys.
+        // Stroke (gray) on top of fill.
         this.ctx.fillStyle = stroke;
-        // Vertical side strokes — span the full height from the
-        // top edge down to the last full-width row.
-        this.ctx.fillRect(x,         y, 1, h - 3);
-        this.ctx.fillRect(x + w - 1, y, 1, h - 3);
-        // Bottom-corner step pixels (radius-4 curve, mirroring
-        // the top of MiddleButton).
-        this.ctx.fillRect(x + 1,     y + h - 3, 1, 1);
-        this.ctx.fillRect(x + 2,     y + h - 2, 1, 1);
-        this.ctx.fillRect(x + w - 2, y + h - 3, 1, 1);
-        this.ctx.fillRect(x + w - 3, y + h - 2, 1, 1);
-        // Bottom stroke, narrowed to clear the rounded corners.
-        this.ctx.fillRect(x + 3,     y + h - 1, w - 6, 1);
+        // Vertical side strokes — span from y+3 down to the bottom edge.
+        this.ctx.fillRect(x,         y + 3, 1, h - 3);
+        this.ctx.fillRect(x + w - 1, y + 3, 1, h - 3);
+        // TL / TR step pixels (mirror of original's BL / BR steps).
+        this.ctx.fillRect(x + 1,     y + 2, 1, 1);            // TL step inner
+        this.ctx.fillRect(x + 2,     y + 1, 1, 1);            // TL step outer
+        this.ctx.fillRect(x + w - 2, y + 2, 1, 1);            // TR step inner
+        this.ctx.fillRect(x + w - 3, y + 1, 1, 1);            // TR step outer
+        // Top stroke (narrowed for rounded corners).
+        this.ctx.fillRect(x + 3,     y,     w - 6, 1);
+        // No bottom stroke — button sits flush with the screen edge.
 
-        // Label sits 1 px higher than the standard `_btnText`
-        // position (y+1 instead of y+2) — the missing top stroke
-        // gives the text an extra pixel to breathe upward.
+        // Label uses the standard 2px top padding, same as _btnText.
         var tw = HaxrcorpFont16.textWidth(text);
         var tx = x + Math.floor((w - tw) / 2);
-        HaxrcorpFont16.draw(this.ctx, text, tx, y + 1, c.fg);
+        HaxrcorpFont16.draw(this.ctx, text, tx, y + 2, c.fg);
     };
 
-    // Icon-content tab button. Same shape as drawNumericTabButton
-    // (square top, rounded bottom, light-gray side + curve
-    // strokes) but renders a centred icon instead of a text
-    // label. Used by the backspace tab that mirrors the 123 tab
-    // on the right side of the screen.
+    // Icon tab button — mirror of drawIconTabButton: rounded TOP,
+    // square BOTTOM. Matches drawNumericTabButton above.
     FlipCanvas.prototype.drawIconTabButton = function(icon, x, y, w, pressed, disabled) {
         var h = BTN_H;
         var c = disabled ? { bg: '#ccc', fg: '#c48021' } : _btnColors(pressed);
         var stroke = '#824704';
         this.ctx.fillStyle = c.bg;
-        this.ctx.fillRect(x,     y,         w,     h - 3);
-        this.ctx.fillRect(x + 1, y + h - 3, w - 2, 1);
-        this.ctx.fillRect(x + 2, y + h - 2, w - 4, 1);
-        this.ctx.fillRect(x + 3, y + h - 1, w - 6, 1);
+        this.ctx.fillRect(x + 3, y,     w - 6, 1);
+        this.ctx.fillRect(x + 2, y + 1, w - 4, 1);
+        this.ctx.fillRect(x + 1, y + 2, w - 2, 1);
+        this.ctx.fillRect(x,     y + 3, w,     h - 3);
 
         this.ctx.fillStyle = stroke;
-        this.ctx.fillRect(x,         y, 1, h - 3);
-        this.ctx.fillRect(x + w - 1, y, 1, h - 3);
-        this.ctx.fillRect(x + 1,     y + h - 3, 1, 1);
-        this.ctx.fillRect(x + 2,     y + h - 2, 1, 1);
-        this.ctx.fillRect(x + w - 2, y + h - 3, 1, 1);
-        this.ctx.fillRect(x + w - 3, y + h - 2, 1, 1);
-        this.ctx.fillRect(x + 3,     y + h - 1, w - 6, 1);
+        this.ctx.fillRect(x,         y + 3, 1, h - 3);
+        this.ctx.fillRect(x + w - 1, y + 3, 1, h - 3);
+        this.ctx.fillRect(x + 1,     y + 2, 1, 1);
+        this.ctx.fillRect(x + 2,     y + 1, 1, 1);
+        this.ctx.fillRect(x + w - 2, y + 2, 1, 1);
+        this.ctx.fillRect(x + w - 3, y + 1, 1, 1);
+        this.ctx.fillRect(x + 3,     y,     w - 6, 1);
 
         if (icon) {
             var ix = x + Math.floor((w - icon.w) / 2);
@@ -306,67 +295,80 @@ var FlipCanvas = (function() {
         }
     };
 
-    // 1-px black selector for the numeric (and icon) tab button —
-    // MIRROR variant. Original had open-top + rounded-bottom +
-    // underline; this one is open-bottom + rounded-top + overline,
-    // so the selector reads as a tab descending toward the button
-    // rather than rising into the keyboard chrome above. Used
-    // because the tab buttons now sit slightly below the keyboard
-    // (with the smaller cell layout) and the upward-pointing
-    // selector looked like it was trying to merge into the chrome
-    // across a visible gap.
-    //
-    // SELECTOR_DY shifts the whole selector down vs the button's
-    // own (x, y). Tune in 1-px steps:
-    //   0 → selector wraps the button at its actual position
-    //   5 → selector clears the button by a few pixels (default)
-    // If you raise this much past ~6 the flank strips will run off
-    // the bottom of the canvas — the canvas is 144 logical px tall
-    // and the tab buttons live at y ≈ 128.
+    // Selector for the mirrored tab buttons — same shape mirror:
+    // rounded TOP, open BOTTOM, with an OVERLINE one row above
+    // instead of an underline one row below. No `SELECTOR_DY`
+    // shift: the selector wraps the button exactly at the
+    // caller-provided (x, y). Moving the selector off the button
+    // breaks the visual selection cue and tends to confuse touch
+    // hit-testing.
     FlipCanvas.prototype.drawNumericTabButtonSelector = function(x, y, w) {
-        var h           = BTN_H;
-        var SELECTOR_DY = 5;
-        y += SELECTOR_DY;
+        var h = BTN_H;
         this.ctx.fillStyle = '#000';
 
-        // Side verticals — bottom-aligned (was top-aligned).
-        this.ctx.fillRect(x,         y + 3,     1, h - 3);            // left
-        this.ctx.fillRect(x + w - 1, y + 3,     1, h - 3);            // right
+        // Side verticals — span from y+3 down to bottom (mirror of
+        // original's y .. y+h-3).
+        this.ctx.fillRect(x,         y + 3, 1, h - 3);            // left
+        this.ctx.fillRect(x + w - 1, y + 3, 1, h - 3);            // right
 
-        // TL / TR step pixels (mirror of original BL / BR).
-        this.ctx.fillRect(x + 1,     y + 2,     1, 1);                 // TL step 1
-        this.ctx.fillRect(x + 2,     y + 1,     1, 1);                 // TL step 2
-        this.ctx.fillRect(x + w - 2, y + 2,     1, 1);                 // TR step 1
-        this.ctx.fillRect(x + w - 3, y + 1,     1, 1);                 // TR step 2
+        // TL / TR step pixels (mirror of original BL / BR at the bottom).
+        this.ctx.fillRect(x + 1,     y + 2, 1, 1);                // TL step 1
+        this.ctx.fillRect(x + 2,     y + 1, 1, 1);                // TL step 2
+        this.ctx.fillRect(x + w - 2, y + 2, 1, 1);                // TR step 1
+        this.ctx.fillRect(x + w - 3, y + 1, 1, 1);                // TR step 2
 
         // Top stroke (mirror of original bottom stroke).
-        this.ctx.fillRect(x + 3,     y,         w - 6, 1);
+        this.ctx.fillRect(x + 3,     y,     w - 6, 1);
 
-        // 1-px nubs above each side stroke — extend the side
-        // verticals upward by one pixel so they meet the row of
-        // the upper corner step.
-        this.ctx.fillRect(x,         y + 2,     1, 1);
-        this.ctx.fillRect(x + w - 1, y + 2,     1, 1);
+        // 1-px nubs above the side strokes — bridge the side
+        // verticals into the corner step row.
+        this.ctx.fillRect(x,         y + 2, 1, 1);
+        this.ctx.fillRect(x + w - 1, y + 2, 1, 1);
 
-        // 1-px corner accents bridging the step pixels into the
-        // top stroke (mirror of original's bottom-corner accents).
-        this.ctx.fillRect(x + 1,     y + 1,     1, 1);
-        this.ctx.fillRect(x + w - 2, y + 1,     1, 1);
-        this.ctx.fillRect(x + 2,     y,         1, 1);
-        this.ctx.fillRect(x + w - 3, y,         1, 1);
+        // 1-px corner accents bridging the step pixels into the top stroke.
+        this.ctx.fillRect(x + 1,     y + 1, 1, 1);
+        this.ctx.fillRect(x + w - 2, y + 1, 1, 1);
+        this.ctx.fillRect(x + 2,     y,     1, 1);
+        this.ctx.fillRect(x + w - 3, y,     1, 1);
 
-        // 1×11 flank strips, 1 column outside each side, now
-        // bottom-aligned with the button's bottom (was top-
-        // aligned with the button's top).
+        // 1×11 flank strips, 1 column outside each side, BOTTOM-aligned
+        // (mirror of original's top-aligned flanks).
         var FLANK_H = 11;
-        this.ctx.fillRect(x - 1,     y + h - FLANK_H, 1, FLANK_H);
-        this.ctx.fillRect(x + w,     y + h - FLANK_H, 1, FLANK_H);
+        this.ctx.fillRect(x - 1, y + h - FLANK_H, 1, FLANK_H);
+        this.ctx.fillRect(x + w, y + h - FLANK_H, 1, FLANK_H);
 
-        // 42×1 OVERLINE strip — 1 row ABOVE the button (was
-        // underline 1 row below). Centred inside the button.
+        // 42×1 OVERLINE strip — 1 row ABOVE the button (mirror of
+        // original's 1-row-below underline). Centred inside the button.
         var OVERLINE_W = 42;
         this.ctx.fillRect(x + Math.floor((w - OVERLINE_W) / 2),
             y - 1, OVERLINE_W, 1);
+    };
+    
+    // Left button — flush with left screen edge, only top-right corner rounded.
+    // Optional `icon` renders to the left of the label; the icon+text
+    // pair is centred together inside the button.
+    FlipCanvas.prototype.drawLeftButton = function(text, x, w, pressed, disabled, icon) {
+        var y = this.h - BTN_H;
+        var c = disabled ? { bg: '#ccc', fg: '#c48021' } : _btnColors(pressed);
+        this.ctx.fillStyle = c.bg;
+        // Fill main areas (4px right radius)
+        this.ctx.fillRect(x,     y,      w - 3, 1);         // Row 0: 4px from right
+        this.ctx.fillRect(x,     y + 1,  w - 2, 1);         // Row 1: 3px from right
+        this.ctx.fillRect(x,     y + 2,  w - 1, 1);         // Row 2: 2px from right
+        this.ctx.fillRect(x,     y + 3,  w,     1);         // Row 3: 1px from right
+        this.ctx.fillRect(x,     y + 4,  w,     BTN_H - 4); // Rows 4+: full width
+
+        // Draw 1px border (no left border, always black)
+        this.ctx.fillStyle = '#000';
+        // Top border (no left corner)
+        this.ctx.fillRect(x, y, w - 3, 1);
+        // Right border corner pixels
+        this.ctx.fillRect(x + w - 3, y + 1, 1, 1);
+        this.ctx.fillRect(x + w - 2, y + 2, 1, 1);
+        // Right border straight
+        this.ctx.fillRect(x + w - 1, y + 3, 1, BTN_H - 3);
+
+        _btnIconText(this, text, icon, x, w, y, c.fg);
     };
 
     // Right button — flush with right screen edge, only top-left corner rounded
