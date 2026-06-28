@@ -888,8 +888,8 @@ var FlipCanvas = (function() {
     // `center` and `amp` over time so transitions read as smooth
     // ripples instead of snaps.
     FlipCanvas.prototype.drawKeyboard = function(x, y, rows, selectedRow, selectedCol, pressedRow, pressedCol, bg, fg, shiftState, langLabel, peekWave, focused, betweenCellsAndSelector) {
-        var BTN_W = 1;
-        var BTN_H = 4;
+        var BTN_W = 15;
+        var BTN_H = 26;
         var BTN_GAP = 0;  // No gap between buttons
         var SPACE_W = 35;  // Width of space button
         var SHIFT_W = 35;  // Width of shift button (matches space)
