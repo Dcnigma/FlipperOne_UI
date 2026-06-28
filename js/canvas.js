@@ -330,49 +330,31 @@ var FlipCanvas = (function() {
     // the bottom of the canvas — the canvas is 144 logical px tall
     // and the tab buttons live at y ≈ 128.
     FlipCanvas.prototype.drawNumericTabButtonSelector = function(x, y, w) {
-        var h           = BTN_H;
-        var SELECTOR_DY = 5;
-        y += SELECTOR_DY;
+        var h = BTN_H;
         this.ctx.fillStyle = '#000';
-
-        // Side verticals — bottom-aligned (was top-aligned).
-        this.ctx.fillRect(x,         y + 3,     1, h - 3);            // left
-        this.ctx.fillRect(x + w - 1, y + 3,     1, h - 3);            // right
-
-        // TL / TR step pixels (mirror of original BL / BR).
-        this.ctx.fillRect(x + 1,     y + 2,     1, 1);                 // TL step 1
-        this.ctx.fillRect(x + 2,     y + 1,     1, 1);                 // TL step 2
-        this.ctx.fillRect(x + w - 2, y + 2,     1, 1);                 // TR step 1
-        this.ctx.fillRect(x + w - 3, y + 1,     1, 1);                 // TR step 2
-
-        // Top stroke (mirror of original bottom stroke).
-        this.ctx.fillRect(x + 3,     y,         w - 6, 1);
-
-        // 1-px nubs above each side stroke — extend the side
-        // verticals upward by one pixel so they meet the row of
-        // the upper corner step.
-        this.ctx.fillRect(x,         y + 2,     1, 1);
-        this.ctx.fillRect(x + w - 1, y + 2,     1, 1);
-
-        // 1-px corner accents bridging the step pixels into the
-        // top stroke (mirror of original's bottom-corner accents).
-        this.ctx.fillRect(x + 1,     y + 1,     1, 1);
-        this.ctx.fillRect(x + w - 2, y + 1,     1, 1);
-        this.ctx.fillRect(x + 2,     y,         1, 1);
-        this.ctx.fillRect(x + w - 3, y,         1, 1);
-
-        // 1×11 flank strips, 1 column outside each side, now
-        // bottom-aligned with the button's bottom (was top-
-        // aligned with the button's top).
+        this.ctx.fillRect(x,         y,         1,     h - 3);      // left
+        this.ctx.fillRect(x + w - 1, y,         1,     h - 3);      // right
+        this.ctx.fillRect(x + 1,     y + h - 3, 1,     1);          // BL step 1
+        this.ctx.fillRect(x + 2,     y + h - 2, 1,     1);          // BL step 2
+        this.ctx.fillRect(x + w - 2, y + h - 3, 1,     1);          // BR step 1
+        this.ctx.fillRect(x + w - 3, y + h - 2, 1,     1);          // BR step 2
+        this.ctx.fillRect(x + 3,     y + h - 1, w - 6, 1);          // bottom
+        // 1-px nubs directly below each side stroke ...
+        this.ctx.fillRect(x,         y + h - 3, 1, 1);
+        this.ctx.fillRect(x + w - 1, y + h - 3, 1, 1);
+        // 1-px corner accents ...
+        this.ctx.fillRect(x + 1,     y + h - 2, 1, 1);
+        this.ctx.fillRect(x + w - 2, y + h - 2, 1, 1);
+        this.ctx.fillRect(x + 2,     y + h - 1, 1, 1);
+        this.ctx.fillRect(x + w - 3, y + h - 1, 1, 1);
+        // 1×11 flank strips ...
         var FLANK_H = 11;
-        this.ctx.fillRect(x - 1,     y + h - FLANK_H, 1, FLANK_H);
-        this.ctx.fillRect(x + w,     y + h - FLANK_H, 1, FLANK_H);
-
-        // 42×1 OVERLINE strip — 1 row ABOVE the button (was
-        // underline 1 row below). Centred inside the button.
-        var OVERLINE_W = 42;
-        this.ctx.fillRect(x + Math.floor((w - OVERLINE_W) / 2),
-            y - 1, OVERLINE_W, 1);
+        this.ctx.fillRect(x - 1,     y, 1, FLANK_H);
+        this.ctx.fillRect(x + w,     y, 1, FLANK_H);
+        // 42×1 underline strip ...
+        var UNDERLINE_W = 42;
+        this.ctx.fillRect(x + Math.floor((w - UNDERLINE_W) / 2),
+            y + h, UNDERLINE_W, 1);
     };
 
     // Left button — flush with left screen edge, only top-right corner rounded.
