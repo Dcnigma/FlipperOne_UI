@@ -100,27 +100,6 @@ var TVMediaKeyboard = (function() {
     TVMediaKeyboard.prototype.enter = function() {
         var self = this;
 
-        // Per-instance keyboard chrome override (read by canvas.js's
-        // drawKeyboard via `this._kbChrome`). Shrinks the QWERTY cells
-        // from the default 15x46 logical units down to 18x24 so the
-        // keyboard looks roughly square on the stretched 1024x600
-        // panel. Cleared in `exit()` so other scenes that use the
-        // shared drawKeyboard (Wi-Fi password, keyboard_test, etc.)
-        // see the original chrome.
-        canvas._kbChrome = {
-            BTN_W:       18,
-            BTN_H:       24,
-            SPACE_W:     42,
-            SHIFT_W:     42,
-            LANG_W:      42,
-            CONTAINER_W: 250,
-            CONTAINER_H: 48
-        };
-
-        // Seed text and cursor from constructor options so a
-
-
-
         // Seed text and cursor from constructor options so a
         // consumer can pre-fill the field (e.g. Wi-Fi password
         // editing an existing entry). Cursor lands at the end
@@ -385,9 +364,6 @@ var TVMediaKeyboard = (function() {
     };
 
     TVMediaKeyboard.prototype.exit = function() {
-
-          canvas._kbChrome = null;
-
         if (this._blinkTimer) {
             clearInterval(this._blinkTimer);
             this._blinkTimer = null;

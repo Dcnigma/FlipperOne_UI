@@ -888,17 +888,8 @@ var FlipCanvas = (function() {
     // `center` and `amp` over time so transitions read as smooth
     // ripples instead of snaps.
     FlipCanvas.prototype.drawKeyboard = function(x, y, rows, selectedRow, selectedCol, pressedRow, pressedCol, bg, fg, shiftState, langLabel, peekWave, focused, betweenCellsAndSelector) {
-        // Per-instance chrome override. Scenes that want a smaller
-        // keyboard (e.g. tv_media_box on stretched 1024x600 panels)
-        // can stash `_kbChrome = { BTN_W, BTN_H, SPACE_W, SHIFT_W,
-        //   LANG_W, CONTAINER_W, CONTAINER_H }` onto the canvas before
-        // calling drawKeyboard, then clear it after. Anything not
-        // present in the override falls back to the original
-        // pixel-art values, so the existing Wi-Fi / keyboard_test /
-        // other scenes are byte-identical to before this patch.
-        var _ovr   = this._kbChrome || {};
-        var BTN_W       = _ovr.BTN_W       != null ? _ovr.BTN_W       : 15;
-        var BTN_H       = _ovr.BTN_H       != null ? _ovr.BTN_H       : 46;
+        var BTN_W = 1;
+        var BTN_H = 4;
         var BTN_GAP = 0;  // No gap between buttons
         var SPACE_W = 35;  // Width of space button
         var SHIFT_W = 35;  // Width of shift button (matches space)
