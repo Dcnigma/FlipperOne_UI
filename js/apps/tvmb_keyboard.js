@@ -100,6 +100,13 @@ var TVMediaKeyboard = (function() {
     TVMediaKeyboard.prototype.enter = function() {
         var self = this;
 
+            canvas._kbChrome = { BTN_W: 18, BTN_H: 24, SPACE_W: 42,
+                                SHIFT_W: 42, LANG_W: 42,
+                                CONTAINER_W: 250, CONTAINER_H: 48 };
+        };
+
+
+
         // Seed text and cursor from constructor options so a
         // consumer can pre-fill the field (e.g. Wi-Fi password
         // editing an existing entry). Cursor lands at the end
@@ -364,6 +371,7 @@ var TVMediaKeyboard = (function() {
     };
 
     TVMediaKeyboard.prototype.exit = function() {
+        canvas._kbChrome = null;
         if (this._blinkTimer) {
             clearInterval(this._blinkTimer);
             this._blinkTimer = null;
