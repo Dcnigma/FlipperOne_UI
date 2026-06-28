@@ -67,34 +67,9 @@ var TVMediaKeyboard = (function() {
     // Touchpad glyph positions. Default = left (over the flipper
     // logo); PTT slides it right to TOUCHPAD_X_FWD and turns on the
     // mouse (touchpad) forwarder.
-
-    // ── Keyboard subtree scale ──────────────────────────────────────
-    // canvas.js's drawKeyboard hardcodes BTN_W=15, BTN_H=46 logical px
-    // (60×184 physical after the uniform 4× scale). That looks fine on
-    // the original 256×144 flipper screen but reads as tall vertical
-    // bars on the stretched 1024×600 panel. We can't touch the shared
-    // drawKeyboard (Wi-Fi & every other on-screen keyboard uses it),
-    // so the fix is local: apply a non-uniform scale around just the
-    // keyboard subtree when *this* scene renders.
-    //
-    //   KB_SX — X scale. 1.0 leaves columns alone (60 phys → ~64 looks
-    //           close enough to square once Y is squashed).
-    //   KB_SY — Y scale. 0.35 maps 184 phys → ~64 phys, so the QWERTY
-    //           keys go from tall bars to roughly square.
-    //   KB_ANCHOR_X / KB_ANCHOR_Y — where the scale is centred (set to
-    //           the same (x, y) the keyboard container is drawn at, so
-    //           the top-left stays pinned and only the cells shrink
-    //           downward / inward).
-    //
-    // Tweak KB_SY in 0.05 steps. If the keys look slightly squashed,
-    // raise to 0.40; if still too tall, drop to 0.30.
-    var KB_SX        = 1.00;
-    var KB_SY        = 0.35;
-    var KB_ANCHOR_X  = 3;     // ← match container x in render()
-    var KB_ANCHOR_Y  = 65;    // ← match container y in render() (the
-                              //   container's top-left, where it
-                              //   currently lands on the 256×144 page)
-
+    var TOUCHPAD_X_LEFT = 1.00;
+    var TOUCHPAD_X_FWD  = 0.35;
+    var TOUCHPAD_Y      = 23;
     // Brightness value (0=black..63=white) at/below which a touchpad
     // pixel is the near-black outline (kept). Brighter non-white pixels
     // are the gray shadows → drawn white. The icon has a clean gap
